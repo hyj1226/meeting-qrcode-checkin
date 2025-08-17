@@ -658,7 +658,8 @@
                     color: {
                         dark: '#1F2937',
                         light: '#ffffff'
-                    }
+                    },
+                    errorCorrectionLevel: 'H' // 关键：设置为最高容错率（H=30%，L=7%，M=15%，Q=25%）
                 }, function (error) {
                     if (error) {
                         console.error('生成二维码失败:', error);
@@ -1175,4 +1176,5 @@
         document.addEventListener('DOMContentLoaded', initApp);
     </script>
 </body>
+
 </html>
