@@ -3,368 +3,148 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>智能二维码签到系统 - 移动端优化版</title>
-    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <title>智能二维码签到系统</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdn.jsdelivr.net/npm/font-awesome@4.7.0/css/font-awesome.min.css" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.1/build/qrcode.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     
-    <style>
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
-        
-        :root {
-            --primary: #3B82F6;
-            --primary-dark: #2563EB;
-            --secondary: #10B981;
-            --secondary-dark: #059669;
-            --warning: #F59E0B;
-            --danger: #EF4444;
-            --dark: #1F2937;
-            --light: #F9FAFB;
-            --gray: #6B7280;
+    <!-- Tailwind 配置 -->
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#3B82F6',
+                        secondary: '#10B981',
+                        warning: '#F59E0B',
+                        danger: '#EF4444',
+                        dark: '#1F2937',
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'system-ui', 'sans-serif'],
+                    },
+                }
+            }
+        }
+    </script>
+    
+    <style type="text/tailwindcss">
+        @layer utilities {
+            .content-auto {
+                content-visibility: auto;
+            }
+            .card-shadow {
+                box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+            }
+            .stat-card {
+                @apply bg-white rounded-xl p-6 card-shadow transition-all duration-300 hover:shadow-lg;
+            }
+            .btn-primary {
+                @apply bg-primary text-white px-4 py-2 rounded-lg hover:bg-primary/90 transition-all duration-300;
+            }
+            .btn-success {
+                @apply bg-secondary text-white px-4 py-2 rounded-lg hover:bg-secondary/90 transition-all duration-300;
+            }
+            .btn-warning {
+                @apply bg-warning text-white px-4 py-2 rounded-lg hover:bg-warning/90 transition-all duration-300;
+            }
+            .btn-danger {
+                @apply bg-danger text-white px-4 py-2 rounded-lg hover:bg-danger/90 transition-all duration-300;
+            }
+            .floating-card {
+                @apply card-shadow rounded-2xl bg-white p-6 transition-all duration-300 hover:shadow-xl;
+            }
         }
         
-        * {
-            box-sizing: border-box;
-            margin: 0;
-            padding: 0;
-            font-family: 'Inter', 'Segoe UI', system-ui, sans-serif;
-        }
-        
-        body {
-            background: linear-gradient(135deg, #f0f7ff 0%, #e6f7ee 100%);
-            min-height: 100vh;
-            color: var(--dark);
-        }
-        
-        .header-gradient {
-            background: linear-gradient(135deg, var(--primary), var(--secondary));
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-        }
-        
-        .card {
-            background: white;
-            border-radius: 16px;
-            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.05);
-            transition: all 0.3s ease;
-            overflow: hidden;
-            position: relative;
-        }
-        
-        .card:hover {
-            transform: translateY(-5px);
-            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.1);
-        }
-        
-        .card::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: 0;
-            right: 0;
-            height: 4px;
-            background: linear-gradient(90deg, var(--primary), var(--secondary));
-        }
-        
-        .stat-card {
-            background: white;
-            border-radius: 14px;
-            padding: 20px;
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
-            transition: all 0.3s ease;
-            border-left: 4px solid var(--primary);
-        }
-        
-        .stat-card:hover {
-            transform: translateY(-3px);
-            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.08);
-        }
-        
-        .btn-primary {
-            background: var(--primary);
-            color: white;
-            padding: 10px 18px;
-            border-radius: 10px;
-            font-weight: 500;
-            transition: all 0.3s;
-            border: none;
-            cursor: pointer;
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-        }
-        
-        .btn-primary:hover {
-            background: var(--primary-dark);
-            transform: translateY(-2px);
-            box-shadow: 0 4px 8px rgba(59, 130, 246, 0.25);
-        }
-        
-        .btn-success {
-            background: var(--secondary);
-            color: white;
-            padding: 10px 18px;
-            border-radius: 10px;
-            font-weight: 500;
-            transition: all 0.3s;
-            border: none;
-            cursor: pointer;
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-        }
-        
-        .btn-success:hover {
-            background: var(--secondary-dark);
-            transform: translateY(-2px);
-            box-shadow: 0 4px 8px rgba(16, 185, 129, 0.25);
-        }
-        
-        .pulse {
-            animation: pulse 1.5s infinite;
-        }
-        
-        @keyframes pulse {
-            0% { opacity: 1; }
-            50% { opacity: 0.7; }
-            100% { opacity: 1; }
-        }
-        
-        .fade-in {
-            animation: fadeIn 0.5s ease-out;
-        }
-        
+        /* 自定义动画 */
         @keyframes fadeIn {
             from { opacity: 0; transform: translateY(10px); }
             to { opacity: 1; transform: translateY(0); }
         }
         
-        .qr-placeholder {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            height: 100%;
-            color: #6B7280;
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.8; }
         }
         
-        .qr-placeholder i {
-            font-size: 48px;
-            margin-bottom: 16px;
-            opacity: 0.3;
+        .animate-fade-in {
+            animation: fadeIn 0.5s ease-out;
         }
         
-        .checkin-form-container {
-            position: fixed;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background: white;
-            z-index: 100;
-            display: flex;
-            flex-direction: column;
-            padding: 24px;
-            transform: translateY(100%);
-            transition: transform 0.4s ease-in-out;
-            overflow-y: auto;
-        }
-        
-        .checkin-form-container.active {
-            transform: translateY(0);
-        }
-        
-        .success-modal {
-            position: fixed;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background: rgba(0, 0, 0, 0.5);
-            z-index: 200;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            opacity: 0;
-            pointer-events: none;
-            transition: opacity 0.3s ease;
-        }
-        
-        .success-modal.active {
-            opacity: 1;
-            pointer-events: all;
-        }
-        
-        .success-content {
-            background: white;
-            border-radius: 16px;
-            padding: 32px;
-            max-width: 90%;
-            width: 400px;
-            text-align: center;
-            transform: scale(0.9);
-            transition: transform 0.3s ease;
-        }
-        
-        .success-modal.active .success-content {
-            transform: scale(1);
-        }
-        
-        .deploy-warning {
-            background: #fffbeb;
-            border: 1px solid #fde68a;
-            border-radius: 8px;
-            padding: 16px;
-            margin-bottom: 24px;
-        }
-        
-        .deploy-steps {
-            list-style-type: decimal;
-            padding-left: 24px;
-            margin-top: 10px;
-        }
-        
-        .deploy-steps li {
-            margin-bottom: 8px;
-        }
-        
-        .status-indicator {
-            position: fixed;
-            top: 10px;
-            right: 10px;
-            background: #10B981;
-            color: white;
-            padding: 6px 12px;
-            border-radius: 20px;
-            font-size: 12px;
-            font-weight: 500;
-            display: flex;
-            align-items: center;
-            z-index: 50;
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-        }
-        
-        .status-indicator .dot {
-            width: 8px;
-            height: 8px;
-            border-radius: 50%;
-            background: white;
-            margin-right: 6px;
-            animation: pulse 1.5s infinite;
-        }
-        
-        .file-warning {
-            background: #fee2e2;
-            border: 1px solid #fecaca;
-            border-radius: 8px;
-            padding: 16px;
-            margin-top: 16px;
-            text-align: center;
-            display: none;
+        .animate-pulse {
+            animation: pulse 1.5s cubic-bezier(0.4, 0, 0.6, 1) infinite;
         }
     </style>
 </head>
-<body class="min-h-screen">
-    <!-- 状态指示器 -->
-    <div id="status-indicator" class="status-indicator">
-        <span class="dot"></span>
-        <span id="status-text">系统运行中</span>
-    </div>
-    
+<body class="bg-gradient-to-br from-gray-50 to-gray-100 min-h-screen">
     <!-- 主容器 -->
     <div id="main-container" class="container mx-auto px-4 py-8 max-w-6xl">
         <!-- 标题区域 -->
-        <header class="text-center mb-6 fade-in">
-            <h1 class="text-3xl md:text-4xl font-bold mb-3 header-gradient">
-                <i class="fas fa-qrcode mr-2"></i>智能二维码签到系统
+        <header class="text-center mb-10 animate-fade-in">
+            <h1 class="text-[clamp(1.8rem,4vw,2.5rem)] font-bold text-dark mb-2">
+                <i class="fa fa-qrcode mr-2 text-primary"></i>智能二维码签到系统
             </h1>
             <p class="text-gray-600 max-w-2xl mx-auto">实时统计签到情况，支持Excel名单导入，跨设备签到，多维度数据分析</p>
         </header>
         
-        <!-- 部署指南 -->
-        <div class="deploy-warning mb-6">
-            <h3 class="font-bold text-lg text-yellow-800 mb-2 flex items-center">
-                <i class="fas fa-exclamation-triangle mr-2"></i>部署指南
-            </h3>
-            <p class="text-yellow-700">手机扫描二维码出现问题的原因：</p>
-            <p class="text-yellow-700 mb-3">手机无法直接访问电脑上的本地文件路径，需要将系统部署到Web服务器</p>
-            
-            <p class="font-medium">解决方案：</p>
-            <ol class="deploy-steps text-yellow-700">
-                <li>将本HTML文件上传到Web服务器（如Apache、Nginx等）</li>
-                <li>使用内网穿透工具（如ngrok）将本地服务暴露到公网</li>
-                <li>在局域网内测试时，使用电脑的IP地址访问（如http://192.168.x.x）</li>
-                <li>使用云服务（如GitHub Pages、Vercel）部署静态页面</li>
-            </ol>
-        </div>
-        
         <!-- 主要内容区域 -->
-        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
             <!-- 左侧：签到二维码 -->
             <div class="lg:col-span-1">
-                <div class="card h-full flex flex-col p-6">
-                    <h2 class="text-xl font-semibold mb-6 flex items-center">
-                        <i class="fas fa-qrcode text-blue-500 mr-2"></i>签到二维码
+                <div class="stat-card h-full flex flex-col">
+                    <h2 class="text-xl font-semibold mb-6 text-center flex items-center justify-center">
+                        <i class="fa fa-qrcode mr-2 text-primary"></i>签到二维码
                     </h2>
-                    <div class="flex-1 flex flex-col items-center justify-center mb-4">
-                        <div id="qrcode-container" class="bg-white p-4 rounded-xl border-2 border-gray-100 mb-4 w-full max-w-xs">
+                    <div class="flex-1 flex flex-col items-center justify-center">
+                        <div id="qrcode-container" class="bg-white p-4 rounded-lg border-2 border-gray-200 mb-6">
                             <div id="qrcode" class="w-64 h-64 mx-auto flex items-center justify-center">
-                                <div class="qr-placeholder">
-                                    <i class="fas fa-qrcode"></i>
-                                    <p>正在生成二维码...</p>
+                                <div class="text-center text-gray-400">
+                                    <i class="fa fa-spinner fa-spin fa-2x mb-3"></i>
+                                    <p>生成二维码中...</p>
                                 </div>
                             </div>
                         </div>
-                        
-                        <!-- 本地文件警告 -->
-                        <div id="file-warning" class="file-warning">
-                            <i class="fas fa-exclamation-circle text-red-500 text-xl mb-2"></i>
-                            <p class="font-medium">检测到本地文件访问</p>
-                            <p class="text-sm">手机无法访问电脑上的本地文件路径</p>
-                            <p class="text-sm mt-2">请按照上方部署指南操作</p>
-                        </div>
-                        
-                        <p class="text-gray-600 text-center mb-4">使用手机扫描二维码进行签到</p>
+                        <p class="text-gray-600 text-center mb-6">使用手机扫描二维码进行签到</p>
                         
                         <!-- 签到统计卡片 -->
-                        <div class="w-full bg-blue-50 rounded-xl p-4 mb-4">
-                            <div class="flex items-center justify-between mb-3">
+                        <div class="floating-card w-full mb-6">
+                            <div class="flex items-center justify-between mb-4">
                                 <h3 class="font-medium text-gray-700">签到统计</h3>
-                                <span class="bg-green-100 text-green-800 text-xs px-2 py-1 rounded-full pulse">
-                                    <i class="fas fa-circle mr-1"></i>实时更新
+                                <span class="bg-green-100 text-green-800 text-xs px-2 py-1 rounded-full animate-pulse">
+                                    <i class="fa fa-circle mr-1"></i>实时更新
                                 </span>
                             </div>
-                            <div class="grid grid-cols-3 gap-3">
+                            <div class="grid grid-cols-3 gap-2">
                                 <div class="text-center">
-                                    <div class="text-2xl font-bold text-blue-600" id="stats-total">0</div>
-                                    <div class="text-sm text-gray-500 mt-1">应到</div>
+                                    <div class="text-2xl font-bold text-primary" id="stats-total">0</div>
+                                    <div class="text-xs text-gray-500 mt-1">应到</div>
                                 </div>
                                 <div class="text-center">
-                                    <div class="text-2xl font-bold text-green-600" id="stats-checked">0</div>
-                                    <div class="text-sm text-gray-500 mt-1">实到</div>
+                                    <div class="text-2xl font-bold text-secondary" id="stats-checked">0</div>
+                                    <div class="text-xs text-gray-500 mt-1">实到</div>
                                 </div>
                                 <div class="text-center">
-                                    <div class="text-2xl font-bold text-red-600" id="stats-unchecked">0</div>
-                                    <div class="text-sm text-gray-500 mt-1">未到</div>
+                                    <div class="text-2xl font-bold text-danger" id="stats-unchecked">0</div>
+                                    <div class="text-xs text-gray-500 mt-1">未到</div>
                                 </div>
                             </div>
                         </div>
                     </div>
                     
-                    <!-- Excel上传 -->
+                    <!-- Excel上传Excel文件 -->
                     <div class="w-full">
-                        <div class="border-t border-gray-200 pt-4">
+                        <div class="border-t border-gray-200 pt-4 mt-4">
                             <label for="excel-upload" class="block text-sm font-medium text-gray-700 mb-2">
-                                <i class="fas fa-file-excel text-green-600 mr-1"></i>上传应到人员Excel
+                                <i class="fa fa-file-excel-o mr-1 text-green-600"></i>上传应到人员Excel
                             </label>
                             <div class="flex items-center">
                                 <input id="excel-upload" type="file" accept=".xlsx, .xls" class="hidden" />
                                 <label for="excel-upload" class="btn-success flex items-center cursor-pointer">
-                                    <i class="fas fa-upload mr-2"></i>选择文件
+                                    <i class="fa fa-upload mr-2"></i>选择文件
                                 </label>
-                                <span id="file-name" class="ml-3 text-gray-600 truncate max-w-[140px]"></span>
+                                <span id="file-name" class="ml-3 text-gray-600 truncate max-w-[120px]"></span>
                             </div>
                             <p class="text-xs text-gray-500 mt-2">支持.xlsx或.xls格式，需包含"姓名"列</p>
                         </div>
@@ -376,43 +156,43 @@
             <div class="lg:col-span-2">
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <!-- 部门统计 -->
-                    <div class="card p-6">
+                    <div class="stat-card">
                         <h2 class="text-xl font-semibold mb-6 flex items-center">
-                            <i class="fas fa-building text-blue-500 mr-2"></i>部门签到统计
+                            <i class="fa fa-building mr-2 text-primary"></i>部门签到统计
                         </h2>
                         <div class="h-64">
                             <canvas id="department-chart"></canvas>
                         </div>
                     </div>
                     
-                    <!-- 签到时间分布 -->
-                    <div class="card p-6">
+                    <!-- 签到趋势 -->
+                    <div class="stat-card">
                         <h2 class="text-xl font-semibold mb-6 flex items-center">
-                            <i class="fas fa-clock text-green-500 mr-2"></i>签到时间分布
+                            <i class="fa fa-line-chart mr-2 text-secondary"></i>签到趋势
                         </h2>
                         <div class="h-64">
-                            <canvas id="time-chart"></canvas>
+                            <canvas id="trend-chart"></canvas>
                         </div>
                     </div>
                 </div>
                 
                 <!-- 未到人员列表 -->
-                <div class="card p-6 mt-6">
+                <div class="stat-card mt-6">
                     <div class="flex justify-between items-center mb-4">
                         <h2 class="text-xl font-semibold flex items-center">
-                            <i class="fas fa-user-times text-red-500 mr-2"></i>未到人员名单
+                            <i class="fa fa-list mr-2 text-danger"></i>未到人员名单
                         </h2>
                         <div class="flex items-center">
                             <span id="unchecked-list-count" class="bg-red-100 text-red-800 px-3 py-1 rounded-full text-sm">0人</span>
-                            <button id="export-btn" class="btn-primary ml-3 text-sm">
-                                <i class="fas fa-download mr-1"></i>导出
+                            <button id="export-btn" class="btn-warning ml-3 text-sm flex items-center">
+                                <i class="fa fa-download mr-1"></i>导出
                             </button>
                         </div>
                     </div>
                     
-                    <div id="unchecked-list" class="overflow-y-auto max-h-80 py-2">
+                    <div id="unchecked-list" class="overflow-y-auto max-h-80">
                         <div class="text-center text-gray-500 py-10">
-                            <i class="fas fa-file-alt text-4xl mb-3 opacity-30"></i>
+                            <i class="fa fa-file-text-o text-4xl mb-3 opacity-30"></i>
                             <p>请先上传包含人员名单的Excel文件</p>
                         </div>
                     </div>
@@ -421,13 +201,13 @@
         </div>
         
         <!-- 最近签到记录 -->
-        <div class="card p-6 mt-6">
+        <div class="stat-card mt-6">
             <h2 class="text-xl font-semibold mb-4 flex items-center">
-                <i class="fas fa-history text-yellow-500 mr-2"></i>最近签到记录
+                <i class="fa fa-history mr-2 text-warning"></i>最近签到记录
             </h2>
             <div id="recent-checkins" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                 <div class="text-center text-gray-500 py-10">
-                    <i class="fas fa-clock text-4xl mb-3 opacity-30"></i>
+                    <i class="fa fa-clock-o text-4xl mb-3 opacity-30"></i>
                     <p>暂无签到记录</p>
                 </div>
             </div>
@@ -435,31 +215,31 @@
     </div>
     
     <!-- 移动端签到表单 -->
-    <div id="checkin-form-container" class="checkin-form-container">
+    <div id="checkin-form-container" class="fixed inset-0 bg-white z-50 flex flex-col p-6 hidden w-full h-full">
         <div class="mb-6">
             <button id="back-to-main" class="text-gray-500 hover:text-gray-700 transition-colors flex items-center mb-4">
-                <i class="fas fa-arrow-left mr-2"></i>返回
+                <i class="fa fa-arrow-left mr-2"></i>返回
             </button>
-            <h2 class="text-2xl font-bold text-gray-800 mb-2">活动签到</h2>
+            <h2 class="text-2xl font-bold text-dark mb-2">活动签到</h2>
             <p class="text-gray-600">请填写您的信息完成签到</p>
         </div>
         
         <form id="checkin-form" class="flex-1">
             <div class="mb-6">
                 <label for="name" class="block text-sm font-medium text-gray-700 mb-1">
-                    <i class="fas fa-user mr-1"></i>姓名 <span class="text-red-500">*</span>
+                    <i class="fa fa-user mr-1"></i>姓名 <span class="text-danger">*</span>
                 </label>
                 <input type="text" id="name" name="name" required
-                    class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
+                    class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary transition-all"
                     placeholder="请输入您的姓名">
             </div>
             
             <div class="mb-6">
                 <label for="department" class="block text-sm font-medium text-gray-700 mb-1">
-                    <i class="fas fa-building mr-1"></i>部门
+                    <i class="fa fa-building mr-1"></i>部门
                 </label>
                 <select id="department" name="department"
-                    class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all">
+                    class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary transition-all">
                     <option value="">请选择部门</option>
                     <option value="技术部">技术部</option>
                     <option value="市场部">市场部</option>
@@ -472,15 +252,15 @@
             
             <div class="mb-8">
                 <label for="note" class="block text-sm font-medium text-gray-700 mb-1">
-                    <i class="fas fa-pencil-alt mr-1"></i>备注 (可选)
+                    <i class="fa fa-pencil mr-1"></i>备注 (可选)
                 </label>
                 <textarea id="note" name="note" rows="2"
-                    class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
+                    class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary transition-all"
                     placeholder="如有需要，请填写备注信息"></textarea>
             </div>
             
             <button type="submit" class="btn-success w-full py-3 text-lg flex items-center justify-center">
-                <i class="fas fa-check-circle mr-2"></i>提交签到
+                <i class="fa fa-check-circle mr-2"></i>提交签到
             </button>
         </form>
         
@@ -490,10 +270,10 @@
     </div>
     
     <!-- 签到成功提示 -->
-    <div id="success-modal" class="success-modal">
-        <div class="success-content">
+    <div id="success-modal" class="fixed inset-0 bg-black/50 z-50 flex items-center justify-center hidden">
+        <div class="bg-white rounded-xl p-8 max-w-md w-full mx-4 text-center animate-fade-in">
             <div class="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                <i class="fas fa-check text-2xl text-green-500"></i>
+                <i class="fa fa-check text-2xl text-green-500"></i>
             </div>
             <h3 class="text-xl font-bold mb-2">签到成功！</h3>
             <p class="text-gray-600 mb-6" id="success-message">感谢您的参与</p>
@@ -504,195 +284,218 @@
     </div>
 
     <script>
-        // 数据存储
-        const dataStore = {
-            allPersons: [],
-            checkedPersons: [],
-            uncheckedPersons: [],
-            departments: {},
-            checkinTimes: [],
-            
-            init() {
-                const savedData = localStorage.getItem('checkinData');
-                if (savedData) {
-                    const data = JSON.parse(savedData);
-                    this.allPersons = data.allPersons || [];
-                    this.checkedPersons = data.checkedPersons || [];
-                    this.uncheckedPersons = data.uncheckedPersons || [];
-                    this.departments = data.departments || {};
-                    this.checkinTimes = data.checkinTimes || [];
-                }
-            },
-            
-            save() {
-                localStorage.setItem('checkinData', JSON.stringify({
-                    allPersons: this.allPersons,
-                    checkedPersons: this.checkedPersons,
-                    uncheckedPersons: this.uncheckedPersons,
-                    departments: this.departments,
-                    checkinTimes: this.checkinTimes
-                }));
-            },
-            
-            setAllPersons(persons) {
-                this.allPersons = persons;
-                this.updateUnchecked();
-                this.save();
-            },
-            
-            addCheckedPerson(name, department = '未指定') {
-                if (!this.checkedPersons.includes(name)) {
-                    this.checkedPersons.push(name);
-                    this.checkinTimes.push(new Date().toISOString());
-                    
-                    // 更新部门统计
-                    if (!this.departments[department]) {
-                        this.departments[department] = { total: 0, checked: 0 };
-                    }
-                    this.departments[department].checked += 1;
-                    
-                    this.updateUnchecked();
-                    this.save();
-                    return true;
-                }
-                return false;
-            },
-            
-            updateUnchecked() {
-                this.uncheckedPersons = this.allPersons.filter(
-                    person => !this.checkedPersons.includes(person.name)
-                );
+        // 数据存储 - 使用IndexedDB替代localStorage
+        const dbName = "checkinSystemDB";
+        const dbVersion = 1;
+        let db;
+        
+        // 初始化数据库
+        function initDB() {
+            return new Promise((resolve, reject) => {
+                const request = indexedDB.open(dbName, dbVersion);
                 
-                // 初始化部门统计
-                this.departments = {};
-                this.allPersons.forEach(person => {
-                    const dept = person.department || '未指定';
-                    if (!this.departments[dept]) {
-                        this.departments[dept] = { total: 0, checked: 0 };
-                    }
-                    this.departments[dept].total += 1;
-                    
-                    if (this.checkedPersons.includes(person.name)) {
-                        this.departments[dept].checked += 1;
-                    }
-                });
-            },
-            
-            getStats() {
-                return {
-                    total: this.allPersons.length,
-                    checked: this.checkedPersons.length,
-                    unchecked: this.uncheckedPersons.length,
-                    departments: this.departments,
-                    checkinTimes: this.checkinTimes
+                request.onerror = (event) => {
+                    console.error("数据库打开失败:", event.target.error);
+                    reject(event.target.error);
                 };
-            }
-        };
-        
-        // DOM 元素
-        const elements = {
-            qrcode: document.getElementById('qrcode'),
-            excelUpload: document.getElementById('excel-upload'),
-            fileName: document.getElementById('file-name'),
-            statsTotal: document.getElementById('stats-total'),
-            statsChecked: document.getElementById('stats-checked'),
-            statsUnchecked: document.getElementById('stats-unchecked'),
-            uncheckedList: document.getElementById('unchecked-list'),
-            uncheckedListCount: document.getElementById('unchecked-list-count'),
-            checkinFormContainer: document.getElementById('checkin-form-container'),
-            mainContainer: document.getElementById('main-container'),
-            checkinForm: document.getElementById('checkin-form'),
-            backToMain: document.getElementById('back-to-main'),
-            successModal: document.getElementById('success-modal'),
-            successMessage: document.getElementById('success-message'),
-            closeSuccess: document.getElementById('close-success'),
-            departmentChart: document.getElementById('department-chart'),
-            timeChart: document.getElementById('time-chart'),
-            recentCheckins: document.getElementById('recent-checkins'),
-            statusText: document.getElementById('status-text'),
-            fileWarning: document.getElementById('file-warning')
-        };
-        
-        // 更新状态信息
-        function updateStatus(message) {
-            if (elements.statusText) {
-                elements.statusText.textContent = message;
-            }
+                
+                request.onupgradeneeded = (event) => {
+                    db = event.target.result;
+                    
+                    // 创建人员存储
+                    if (!db.objectStoreNames.contains('persons')) {
+                        const personsStore = db.createObjectStore('persons', { keyPath: 'id', autoIncrement: true });
+                        personsStore.createIndex('name', 'name', { unique: false });
+                        personsStore.createIndex('department', 'department', { unique: false });
+                        personsStore.createIndex('checked', 'checked', { unique: false });
+                    }
+                    
+                    // 创建签到记录存储
+                    if (!db.objectStoreNames.contains('checkins')) {
+                        const checkinsStore = db.createObjectStore('checkins', { keyPath: 'id', autoIncrement: true });
+                        checkinsStore.createIndex('name', 'name', { unique: false });
+                        checkinsStore.createIndex('timestamp', 'timestamp', { unique: false });
+                    }
+                };
+                
+                request.onsuccess = (event) => {
+                    db = event.target.result;
+                    resolve(db);
+                };
+            });
         }
         
-        // 生成二维码（修复版）
-        function generateQRCode() {
-            try {
-                updateStatus('生成二维码中...');
-                const qrcodeElement = document.getElementById('qrcode');
-                qrcodeElement.innerHTML = '';
+        // 添加人员
+        function addPerson(person) {
+            return new Promise((resolve, reject) => {
+                const transaction = db.transaction(['persons'], 'readwrite');
+                const store = transaction.objectStore('persons');
                 
-                // 创建Canvas元素
-                const canvas = document.createElement('canvas');
-                canvas.id = 'qrcode-canvas';
-                canvas.width = 256;
-                canvas.height = 256;
-                canvas.style.display = 'block';
-                qrcodeElement.appendChild(canvas);
-                
-                // 检测URL协议
-                const isLocalFile = window.location.protocol === 'file:';
-                
-                // 如果是本地文件，显示警告
-                if (isLocalFile) {
-                    elements.fileWarning.style.display = 'block';
-                    updateStatus('本地环境，手机无法访问');
-                } else {
-                    elements.fileWarning.style.display = 'none';
-                }
-                
-                // 生成动态URL - 使用当前URL
-                const currentUrl = new URL(window.location.href);
-                currentUrl.searchParams.set('checkin', 'true');
-                const checkinUrl = currentUrl.toString();
-                
-                // 生成二维码
-                QRCode.toCanvas(canvas, checkinUrl, {
-                    width: 256,
-                    margin: 1,
-                    color: {
-                        dark: '#1F2937',
-                        light: '#ffffff'
-                    }
-                }, function (error) {
-                    if (error) {
-                        console.error('生成二维码失败:', error);
-                        updateStatus('二维码生成失败');
-                        qrcodeElement.innerHTML = `
-                            <div class="flex flex-col items-center justify-center h-full text-red-500 p-4">
-                                <i class="fas fa-exclamation-triangle text-2xl mb-2"></i>
-                                <p class="text-center">二维码生成失败</p>
-                                <p class="text-xs mt-2">${error.message}</p>
-                                <button onclick="generateQRCode()" class="mt-4 px-4 py-2 bg-blue-500 text-white rounded-lg">
-                                    重试
-                                </button>
-                            </div>
-                        `;
-                    } else {
-                        console.log('二维码生成成功:', checkinUrl);
-                        updateStatus(isLocalFile ? '本地环境，手机无法访问' : '等待手机扫描');
-                    }
+                const request = store.add({
+                    name: person.name,
+                    department: person.department || '未指定',
+                    checked: false
                 });
-            } catch (error) {
-                console.error('二维码生成函数错误:', error);
-                updateStatus('二维码生成错误');
-                const qrcodeElement = document.getElementById('qrcode');
-                qrcodeElement.innerHTML = `
-                    <div class="flex flex-col items-center justify-center h-full text-red-500 p-4">
-                        <i class="fas fa-exclamation-triangle text-2xl mb-2"></i>
-                        <p class="text-center">二维码加载出错</p>
-                        <p class="text-xs mt-2">${error.message}</p>
-                        <button onclick="generateQRCode()" class="mt-4 px-4 py-2 bg-blue-500 text-white rounded-lg">
-                            重试
-                        </button>
-                    </div>
-                `;
-            }
+                
+                request.onsuccess = () => resolve(request.result);
+                request.onerror = (event) => reject(event.target.error);
+            });
+        }
+        
+        // 批量添加人员
+        function addPersons(persons) {
+            return new Promise((resolve, reject) => {
+                const transaction = db.transaction(['persons'], 'readwrite');
+                const store = transaction.objectStore('persons');
+                
+                persons.forEach(person => {
+                    store.add({
+                        name: person.name,
+                        department: person.department || '未指定',
+                        checked: false
+                    });
+                });
+                
+                transaction.oncomplete = () => resolve();
+                transaction.onerror = (event) => reject(event.target.error);
+            });
+        }
+        
+        // 获取所有人员
+        function getAllPersons() {
+            return new Promise((resolve, reject) => {
+                const transaction = db.transaction(['persons'], 'readonly');
+                const store = transaction.objectStore('persons');
+                const request = store.getAll();
+                
+                request.onsuccess = () => resolve(request.result);
+                request.onerror = (event) => reject(event.target.error);
+            });
+        }
+        
+        // 添加签到记录
+        function addCheckin(name, department, note) {
+            return new Promise((resolve, reject) => {
+                const transaction = db.transaction(['checkins', 'persons'], 'readwrite');
+                const checkinsStore = transaction.objectStore('checkins');
+                const personsStore = transaction.objectStore('persons');
+                
+                // 添加签到记录
+                const checkinRequest = checkinsStore.add({
+                    name: name,
+                    department: department || '未指定',
+                    note: note || '',
+                    timestamp: new Date().toISOString()
+                });
+                
+                // 更新人员签到状态
+                const index = personsStore.index('name');
+                const request = index.getAll(name);
+                
+                request.onsuccess = () => {
+                    const persons = request.result;
+                    if (persons.length > 0) {
+                        persons.forEach(person => {
+                            const updateRequest = personsStore.put({
+                                ...person,
+                                checked: true
+                            });
+                            
+                            updateRequest.onerror = (event) => {
+                                console.error("更新人员状态失败:", event.target.error);
+                            };
+                        });
+                    }
+                };
+                
+                transaction.oncomplete = () => resolve();
+                transaction.onerror = (event) => reject(event.target.error);
+            });
+        }
+        
+        // 获取签到记录
+        function getCheckins(limit = 10) {
+            return new Promise((resolve, reject) => {
+                const transaction = db.transaction(['checkins'], 'readonly');
+                const store = transaction.objectStore('checkins');
+                const index = store.index('timestamp');
+                
+                const request = index.openCursor(null, 'prev');
+                const checkins = [];
+                
+                request.onsuccess = (event) => {
+                    const cursor = event.target.result;
+                    if (cursor && checkins.length < limit) {
+                        checkins.push(cursor.value);
+                        cursor.continue();
+                    } else {
+                        resolve(checkins);
+                    }
+                };
+                
+                request.onerror = (event) => reject(event.target.error);
+            });
+        }
+        
+        // 获取统计数据
+        async function getStats() {
+            const persons = await getAllPersons();
+            
+            const total = persons.length;
+            const checked = persons.filter(p => p.checked).length;
+            const unchecked = total - checked;
+            
+            // 部门统计
+            const departmentStats = {};
+            persons.forEach(person => {
+                const dept = person.department || '未指定';
+                if (!departmentStats[dept]) {
+                    departmentStats[dept] = { total: 0, checked: 0 };
+                }
+                departmentStats[dept].total++;
+                if (person.checked) departmentStats[dept].checked++;
+            });
+            
+            // 获取最近签到记录
+            const recentCheckins = await getCheckins(10);
+            
+            return {
+                total,
+                checked,
+                unchecked,
+                departmentStats,
+                recentCheckins
+            };
+        }
+        
+        // 生成二维码
+        function generateQRCode() {
+            const qrcodeElement = document.getElementById('qrcode');
+            qrcodeElement.innerHTML = '';
+            
+            // 生成动态URL
+            const currentUrl = new URL(window.location.href);
+            currentUrl.searchParams.set('checkin', 'true');
+            const checkinUrl = currentUrl.toString();
+            
+            // 生成二维码
+            QRCode.toCanvas(qrcodeElement, checkinUrl, {
+                width: 256,
+                margin: 1,
+                color: {
+                    dark: '#1F2937',
+                    light: '#ffffff'
+                }
+            }, (error) => {
+                if (error) {
+                    qrcodeElement.innerHTML = `
+                        <div class="text-center text-red-500 py-8">
+                            <i class="fa fa-exclamation-triangle fa-2x mb-2"></i>
+                            <p>二维码生成失败</p>
+                        </div>
+                    `;
+                }
+            });
         }
         
         // 检查URL参数判断是否显示签到表单
@@ -700,45 +503,44 @@
             const urlParams = new URLSearchParams(window.location.search);
             if (urlParams.has('checkin')) {
                 showCheckinForm();
-                // 清除URL参数避免重复显示
-                history.replaceState({}, document.title, window.location.pathname);
-                updateStatus('签到表单已打开');
             }
         }
         
         // 处理Excel文件上传
-        function handleExcelUpload(e) {
+        async function handleExcelUpload(e) {
             const file = e.target.files[0];
             if (!file) return;
             
             // 显示文件名
-            elements.fileName.textContent = file.name;
+            document.getElementById('file-name').textContent = file.name;
             
             const reader = new FileReader();
-            reader.onload = function(e) {
+            reader.onload = async function(e) {
                 try {
-                    updateStatus('解析Excel中...');
                     const data = new Uint8Array(e.target.result);
                     const workbook = XLSX.read(data, { type: 'array' });
                     const firstSheetName = workbook.SheetNames[0];
                     const worksheet = workbook.Sheets[firstSheetName];
                     const jsonData = XLSX.utils.sheet_to_json(worksheet);
                     
-                    // 提取姓名列 (支持"姓名"或"name"等不同列名)
-                    const nameColumn = findNameColumn(jsonData);
-                    if (!nameColumn) {
-                        showToast('Excel文件中未找到包含"姓名"的列', 'error');
-                        updateStatus('Excel格式错误');
-                        return;
-                    }
-                    
-                    // 提取部门列
-                    const deptColumn = findDeptColumn(jsonData);
-                    
+                    // 提取姓名和部门列
                     const persons = [];
                     jsonData.forEach(row => {
-                        const name = row[nameColumn]?.toString().trim();
-                        const department = deptColumn ? row[deptColumn]?.toString().trim() : '未指定';
+                        // 尝试查找姓名列
+                        let name = '';
+                        Object.keys(row).forEach(key => {
+                            if (key.includes('姓名') || key.toLowerCase().includes('name')) {
+                                name = row[key]?.toString().trim() || '';
+                            }
+                        });
+                        
+                        // 尝试查找部门列
+                        let department = '';
+                        Object.keys(row).forEach(key => {
+                            if (key.includes('部门') || key.toLowerCase().includes('department')) {
+                                department = row[key]?.toString().trim() || '';
+                            }
+                        });
                         
                         if (name) {
                             persons.push({ name, department });
@@ -746,141 +548,77 @@
                     });
                     
                     if (persons.length === 0) {
-                        showToast('未从Excel文件中提取到有效姓名数据', 'error');
-                        updateStatus('Excel数据为空');
+                        showToast('Excel文件中未找到有效人员数据', 'error');
                         return;
                     }
                     
-                    // 更新数据并刷新界面
-                    dataStore.setAllPersons(persons);
+                    // 清空数据库并添加新人员
+                    await clearDatabase();
+                    await addPersons(persons);
+                    
+                    // 更新UI
                     updateUI();
-                    showToast(`成功导入 ${persons.length} 名人员信息`, 'success');
-                    updateStatus('名单导入成功');
+                    showToast(`成功导入 ${persons.length} 名人员`, 'success');
                 } catch (error) {
                     console.error('解析Excel文件失败:', error);
-                    showToast('解析Excel文件失败，请确保文件格式正确', 'error');
-                    updateStatus('Excel解析失败');
+                    showToast('解析Excel文件失败，请检查格式', 'error');
                 }
             };
             reader.readAsArrayBuffer(file);
         }
         
-        // 查找包含姓名的列
-        function findNameColumn(jsonData) {
-            if (!jsonData || jsonData.length === 0) return null;
-            
-            const firstRow = jsonData[0];
-            const possibleColumns = Object.keys(firstRow);
-            
-            // 查找包含"姓名"的列
-            for (const column of possibleColumns) {
-                if (column.includes('姓名') || column.toLowerCase().includes('name')) {
-                    return column;
-                }
-            }
-            
-            return possibleColumns[0] || null;
+        // 清空数据库
+        async function clearDatabase() {
+            return new Promise((resolve, reject) => {
+                const transaction = db.transaction(['persons', 'checkins'], 'readwrite');
+                const personsStore = transaction.objectStore('persons');
+                const checkinsStore = transaction.objectStore('checkins');
+                
+                personsStore.clear();
+                checkinsStore.clear();
+                
+                transaction.oncomplete = () => resolve();
+                transaction.onerror = (event) => reject(event.target.error);
+            });
         }
         
-        // 查找包含部门的列
-        function findDeptColumn(jsonData) {
-            if (!jsonData || jsonData.length === 0) return null;
-            
-            const firstRow = jsonData[0];
-            const possibleColumns = Object.keys(firstRow);
-            
-            // 查找包含"部门"的列
-            for (const column of possibleColumns) {
-                if (column.includes('部门') || column.toLowerCase().includes('department')) {
-                    return column;
-                }
-            }
-            
-            return null;
-        }
-        
-        // 更新UI显示
-        function updateUI() {
-            const stats = dataStore.getStats();
+        // 更新UI
+        async function updateUI() {
+            const stats = await getStats();
             
             // 更新统计数字
-            elements.statsTotal.textContent = stats.total;
-            elements.statsChecked.textContent = stats.checked;
-            elements.statsUnchecked.textContent = stats.unchecked;
-            elements.uncheckedListCount.textContent = `${stats.unchecked}人`;
+            document.getElementById('stats-total').textContent = stats.total;
+            document.getElementById('stats-checked').textContent = stats.checked;
+            document.getElementById('stats-unchecked').textContent = stats.unchecked;
+            document.getElementById('unchecked-list-count').textContent = `${stats.unchecked}人`;
             
             // 更新部门统计图表
-            updateDepartmentChart(stats.departments);
-            
-            // 更新签到时间图表
-            updateTimeChart(stats.checkinTimes);
-            
-            // 更新未到人员列表
-            if (stats.total === 0) {
-                elements.uncheckedList.innerHTML = `
-                    <div class="text-center text-gray-500 py-10">
-                        <i class="fas fa-file-alt text-4xl mb-3 opacity-30"></i>
-                        <p>请先上传包含人员名单的Excel文件</p>
-                    </div>
-                `;
-            } else if (stats.unchecked === 0) {
-                elements.uncheckedList.innerHTML = `
-                    <div class="text-center text-gray-500 py-10">
-                        <i class="fas fa-check-circle text-4xl mb-3 text-green-500"></i>
-                        <p>所有人均已签到</p>
-                    </div>
-                `;
-            } else {
-                // 按部门分组
-                const departments = {};
-                dataStore.uncheckedPersons.forEach(person => {
-                    if (!departments[person.department]) {
-                        departments[person.department] = [];
-                    }
-                    departments[person.department].push(person.name);
-                });
-                
-                let html = '';
-                for (const dept in departments) {
-                    html += `
-                        <div class="mb-5">
-                            <h3 class="font-medium text-gray-700 mb-2">${dept}</h3>
-                            <div class="grid grid-cols-2 sm:grid-cols-3 gap-2">
-                                ${departments[dept].map(name => `
-                                    <div class="bg-gray-50 p-2 rounded-lg border border-gray-200 text-sm">
-                                        ${name}
-                                    </div>
-                                `).join('')}
-                            </div>
-                        </div>
-                    `;
-                }
-                
-                elements.uncheckedList.innerHTML = html;
-            }
+            updateDepartmentChart(stats.departmentStats);
             
             // 更新最近签到记录
-            updateRecentCheckins();
-            updateStatus('数据已更新');
+            updateRecentCheckins(stats.recentCheckins);
+            
+            // 更新未到人员列表
+            updateUncheckedList(stats);
         }
         
         // 更新部门统计图表
-        function updateDepartmentChart(departments) {
-            const ctx = elements.departmentChart.getContext('2d');
+        function updateDepartmentChart(departmentStats) {
+            const ctx = document.getElementById('department-chart').getContext('2d');
             
             // 销毁旧图表
             if (window.departmentChart) {
                 window.departmentChart.destroy();
             }
             
-            const deptNames = Object.keys(departments);
-            const checkedData = deptNames.map(dept => departments[dept].checked || 0);
-            const uncheckedData = deptNames.map(dept => (departments[dept].total || 0) - (departments[dept].checked || 0));
+            const departments = Object.keys(departmentStats);
+            const checkedData = departments.map(dept => departmentStats[dept].checked);
+            const uncheckedData = departments.map(dept => departmentStats[dept].total - departmentStats[dept].checked);
             
             window.departmentChart = new Chart(ctx, {
                 type: 'bar',
                 data: {
-                    labels: deptNames,
+                    labels: departments,
                     datasets: [
                         {
                             label: '已签到',
@@ -911,67 +649,16 @@
                             beginAtZero: true,
                             ticks: {
                                 precision: 0
+                            },
+                            title: {
+                                display: true,
+                                text: '人数'
                             }
-                        }
-                    }
-                }
-            });
-        }
-        
-        // 更新签到时间图表
-        function updateTimeChart(checkinTimes) {
-            const ctx = elements.timeChart.getContext('2d');
-            
-            // 销毁旧图表
-            if (window.timeChart) {
-                window.timeChart.destroy();
-            }
-            
-            // 按小时统计签到人数
-            const hourCounts = new Array(24).fill(0);
-            checkinTimes.forEach(timeStr => {
-                const time = new Date(timeStr);
-                const hour = time.getHours();
-                hourCounts[hour]++;
-            });
-            
-            const hours = Array.from({length: 24}, (_, i) => `${i}:00`);
-            
-            window.timeChart = new Chart(ctx, {
-                type: 'line',
-                data: {
-                    labels: hours,
-                    datasets: [
-                        {
-                            label: '签到人数',
-                            data: hourCounts,
-                            backgroundColor: 'rgba(59, 130, 246, 0.1)',
-                            borderColor: '#3B82F6',
-                            borderWidth: 2,
-                            pointBackgroundColor: '#3B82F6',
-                            pointRadius: 3,
-                            tension: 0.3,
-                            fill: true
-                        }
-                    ]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: {
-                        legend: {
-                            position: 'top',
                         },
-                        title: {
-                            display: true,
-                            text: '签到时间分布'
-                        }
-                    },
-                    scales: {
-                        y: {
-                            beginAtZero: true,
-                            ticks: {
-                                precision: 0
+                        x: {
+                            title: {
+                                display: true,
+                                text: '部门'
                             }
                         }
                     }
@@ -980,48 +667,104 @@
         }
         
         // 更新最近签到记录
-        function updateRecentCheckins() {
-            const container = elements.recentCheckins;
-            container.innerHTML = '';
+        function updateRecentCheckins(checkins) {
+            const container = document.getElementById('recent-checkins');
             
-            if (dataStore.checkedPersons.length === 0) {
+            if (!checkins || checkins.length === 0) {
                 container.innerHTML = `
                     <div class="col-span-3 text-center text-gray-500 py-10">
-                        <i class="fas fa-clock text-4xl mb-3 opacity-30"></i>
+                        <i class="fa fa-clock-o text-4xl mb-3 opacity-30"></i>
                         <p>暂无签到记录</p>
                     </div>
                 `;
                 return;
             }
             
-            // 显示最近10条签到记录
-            const recentPersons = dataStore.checkedPersons.slice(-10).reverse();
+            container.innerHTML = '';
             
-            recentPersons.forEach(name => {
-                const person = dataStore.allPersons.find(p => p.name === name) || { name, department: '未指定' };
-                const time = new Date().toLocaleTimeString();
+            checkins.forEach(checkin => {
+                const time = new Date(checkin.timestamp);
+                const timeStr = `${time.getHours().toString().padStart(2, '0')}:${time.getMinutes().toString().padStart(2, '0')}`;
                 
                 const card = document.createElement('div');
-                card.className = 'bg-white rounded-lg p-4 shadow-sm border border-gray-100';
+                card.className = 'floating-card';
                 card.innerHTML = `
                     <div class="flex justify-between items-start">
                         <div>
-                            <h3 class="font-semibold">${person.name}</h3>
-                            <p class="text-sm text-gray-500 mt-1">${person.department}</p>
+                            <h3 class="font-semibold">${checkin.name}</h3>
+                            <p class="text-sm text-gray-500 mt-1">${checkin.department}</p>
                         </div>
-                        <span class="text-xs text-gray-400">${time}</span>
+                        <span class="text-xs text-gray-400">${timeStr}</span>
                     </div>
+                    ${checkin.note ? `<p class="mt-3 text-sm text-gray-600">${checkin.note}</p>` : ''}
                 `;
                 
                 container.appendChild(card);
             });
         }
         
+        // 更新未到人员列表
+        async function updateUncheckedList(stats) {
+            const container = document.getElementById('unchecked-list');
+            
+            if (stats.total === 0) {
+                container.innerHTML = `
+                    <div class="text-center text-gray-500 py-10">
+                        <i class="fa fa-file-text-o text-4xl mb-3 opacity-30"></i>
+                        <p>请先上传包含人员名单的Excel文件</p>
+                    </div>
+                `;
+                return;
+            }
+            
+            if (stats.unchecked === 0) {
+                container.innerHTML = `
+                    <div class="text-center text-gray-500 py-10">
+                        <i class="fa fa-check-circle text-4xl mb-3 text-green-500"></i>
+                        <p>所有人均已签到</p>
+                    </div>
+                `;
+                return;
+            }
+            
+            // 获取所有未签到人员
+            const persons = await getAllPersons();
+            const uncheckedPersons = persons.filter(p => !p.checked);
+            
+            container.innerHTML = '';
+            
+            // 按部门分组
+            const groups = {};
+            uncheckedPersons.forEach(person => {
+                const dept = person.department || '未指定';
+                if (!groups[dept]) groups[dept] = [];
+                groups[dept].push(person);
+            });
+            
+            // 显示分组列表
+            Object.keys(groups).forEach(dept => {
+                const groupDiv = document.createElement('div');
+                groupDiv.className = 'mb-4';
+                groupDiv.innerHTML = `
+                    <h3 class="font-medium text-gray-700 mb-2">${dept} <span class="text-xs bg-gray-100 px-2 py-1 rounded">${groups[dept].length}人</span></h3>
+                    <div class="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                        ${groups[dept].map(person => `
+                            <div class="bg-gray-50 p-2 rounded border border-gray-200 text-sm">
+                                ${person.name}
+                            </div>
+                        `).join('')}
+                    </div>
+                `;
+                
+                container.appendChild(groupDiv);
+            });
+        }
+        
         // 处理签到表单提交
-        function handleCheckinSubmit(e) {
+        async function handleCheckinSubmit(e) {
             e.preventDefault();
             const name = document.getElementById('name').value.trim();
-            const department = document.getElementById('department').value || '未指定';
+            const department = document.getElementById('department').value;
             const note = document.getElementById('note').value;
             
             if (!name) {
@@ -1029,36 +772,23 @@
                 return;
             }
             
-            // 检查是否在应到名单中
-            const isInList = dataStore.allPersons.some(p => p.name === name);
-            if (!isInList) {
-                if (!confirm(`"${name}" 不在应到名单中，是否仍要签到？`)) {
-                    return;
-                }
-            }
-            
-            // 检查是否已签到
-            if (dataStore.checkedPersons.includes(name)) {
-                showToast('您已签到，无需重复提交', 'info');
-                return;
-            }
-            
-            // 处理签到
-            const success = dataStore.addCheckedPerson(name, department);
-            if (success) {
-                showSuccessModal(name);
+            try {
+                // 添加签到记录
+                await addCheckin(name, department, note);
+                
+                // 显示成功消息
+                document.getElementById('success-message').textContent = `您好，${name}，签到成功！`;
+                document.getElementById('success-modal').classList.remove('hidden');
+                
+                // 更新UI
                 updateUI();
-                updateStatus('签到成功');
-            } else {
+                
+                // 重置表单
+                document.getElementById('checkin-form').reset();
+            } catch (error) {
+                console.error('签到失败:', error);
                 showToast('签到失败，请稍后重试', 'error');
-                updateStatus('签到失败');
             }
-        }
-        
-        // 显示成功提示
-        function showSuccessModal(name) {
-            elements.successMessage.textContent = `您好，${name}，签到成功！`;
-            elements.successModal.classList.add('active');
         }
         
         // 显示提示消息
@@ -1068,15 +798,13 @@
             toast.className = `fixed top-4 right-4 px-4 py-3 rounded-lg shadow-lg z-50 transition-all duration-300 transform translate-y-0 opacity-100 ${
                 type === 'success' ? 'bg-green-50 text-green-800 border border-green-200' :
                 type === 'error' ? 'bg-red-50 text-red-800 border border-red-200' :
-                type === 'info' ? 'bg-blue-50 text-blue-800 border border-blue-200' :
-                'bg-yellow-50 text-yellow-800 border border-yellow-200'
+                'bg-blue-50 text-blue-800 border border-blue-200'
             }`;
             toast.innerHTML = `
-                <i class="fas ${
+                <i class="fa ${
                     type === 'success' ? 'fa-check-circle' :
                     type === 'error' ? 'fa-exclamation-circle' :
-                    type === 'info' ? 'fa-info-circle' :
-                    'fa-exclamation-triangle'
+                    'fa-info-circle'
                 } mr-2"></i>
                 ${message}
             `;
@@ -1095,80 +823,91 @@
         
         // 显示签到表单
         function showCheckinForm() {
-            elements.checkinFormContainer.classList.add('active');
-            // 滚动到顶部确保表单可见
-            window.scrollTo(0, 0);
+            document.getElementById('main-container').classList.add('hidden');
+            document.getElementById('checkin-form-container').classList.remove('hidden');
         }
         
         // 显示主页面
         function showMainPage() {
-            elements.checkinFormContainer.classList.remove('active');
-            elements.successModal.classList.remove('active');
-            updateStatus('系统运行中');
+            document.getElementById('checkin-form-container').classList.add('hidden');
+            document.getElementById('success-modal').classList.add('hidden');
+            document.getElementById('main-container').classList.remove('hidden');
         }
         
         // 事件监听
         function setupEventListeners() {
             // Excel上传
-            elements.excelUpload.addEventListener('change', handleExcelUpload);
+            document.getElementById('excel-upload').addEventListener('change', handleExcelUpload);
             
             // 签到表单提交
-            elements.checkinForm.addEventListener('submit', handleCheckinSubmit);
+            document.getElementById('checkin-form').addEventListener('submit', handleCheckinSubmit);
             
             // 返回主页面
-            elements.backToMain.addEventListener('click', showMainPage);
+            document.getElementById('back-to-main').addEventListener('click', showMainPage);
             
             // 关闭成功提示
-            elements.closeSuccess.addEventListener('click', () => {
-                elements.successModal.classList.remove('active');
+            document.getElementById('close-success').addEventListener('click', () => {
+                document.getElementById('success-modal').classList.add('hidden');
                 // 在移动设备上返回主页面
                 if (window.innerWidth < 768) {
                     showMainPage();
                 }
             });
-            
-            // 导出按钮
-            document.getElementById('export-btn').addEventListener('click', () => {
-                if (dataStore.uncheckedPersons.length === 0) {
+        }
+        
+        // 导出未到人员名单
+        function setupExportButton() {
+            document.getElementById('export-btn').addEventListener('click', async () => {
+                const stats = await getStats();
+                
+                if (stats.unchecked === 0) {
                     showToast('没有未到人员可导出', 'info');
                     return;
                 }
                 
+                // 获取所有未签到人员
+                const persons = await getAllPersons();
+                const uncheckedPersons = persons.filter(p => !p.checked);
+                
                 // 创建工作簿
                 const wb = XLSX.utils.book_new();
                 
-                // 添加工作表
-                const wsData = [['姓名', '部门', '状态']];
+                // 创建工作表数据
+                const wsData = [
+                    ['姓名', '部门', '状态']
+                ];
                 
-                dataStore.allPersons.forEach(person => {
-                    const isChecked = dataStore.checkedPersons.includes(person.name);
-                    wsData.push([
-                        person.name,
-                        person.department,
-                        isChecked ? '已签到' : '未签到'
-                    ]);
+                uncheckedPersons.forEach(person => {
+                    wsData.push([person.name, person.department, '未签到']);
                 });
                 
                 const ws = XLSX.utils.aoa_to_sheet(wsData);
-                XLSX.utils.book_append_sheet(wb, ws, '签到统计');
                 
-                // 导出Excel
-                XLSX.writeFile(wb, '签到统计.xlsx');
-                showToast('导出成功', 'success');
+                // 将工作表添加到工作簿
+                XLSX.utils.book_append_sheet(wb, ws, '未到人员名单');
+                
+                // 导出Excel文件
+                XLSX.writeFile(wb, '未到人员名单.xlsx');
             });
         }
         
         // 初始化应用
-        function initApp() {
-            dataStore.init();
-            setupEventListeners();
-            updateUI();
+        async function initApp() {
+            // 初始化数据库
+            await initDB();
             
-            // 在DOM完全加载后生成二维码
-            setTimeout(() => {
-                generateQRCode();
-                checkCheckinMode();
-            }, 300);
+            // 设置事件监听
+            setupEventListeners();
+            setupExportButton();
+            
+            // 生成二维码
+            generateQRCode();
+            
+            // 检查URL参数判断是否显示签到表单
+            checkCheckinMode();
+            
+            // 更新UI
+            updateUI();
         }
         
         // 启动应用
