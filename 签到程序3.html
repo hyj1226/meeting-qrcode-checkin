@@ -609,7 +609,12 @@
             
             // 保存数据到Gist
             async saveToGist() {
-                if (!this.githubToken) return;
+                if (!this.githubToken) {
+					console.warn('未设置GitHub Token，无法保存到Gist');
+					showToast('未连接GitHub账号，数据仅保存在本地', 'warning');
+					return;
+				}
+
                 
                 const data = JSON.stringify({
                     allPersons: this.allPersons,
@@ -660,6 +665,12 @@
                     const gist = await response.json();
                     this.gistId = gist.id;
                     localStorage.setItem('checkinGistId', gist.id);
+					console.log('Gist保存成功:', {
+                id: gist.id,
+                url: gist.html_url,
+                size: (data.length / 1024).toFixed(2) + 'KB',
+                updatedAt: gist.updated_at
+            });
                     return gist;
                 } else {
                     throw new Error(`Gist API返回错误: ${response.status}`);
@@ -884,11 +895,9 @@
                     `;
                     return;
                 }
-                
-                // 生成动态URL - 使用当前URL
-                const currentUrl = new URL(window.location.href);
-                currentUrl.searchParams.set('checkin', 'true');
-                const checkinUrl = currentUrl.toString();
+                // 生成包含唯一会议ID的URL
+const meetingId = 'MEETING_' + Date.now();
+const checkinUrl = `${window.location.origin}${window.location.pathname}?checkin=true&meeting=${meetingId}`;
                 
                 // 使用QRCode.toCanvas方法生成二维码
                 const canvas = document.createElement('canvas');
