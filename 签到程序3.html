@@ -625,10 +625,10 @@ async save() {
             updateGithubStatus(false);
         }
     }
-}
+},
             
             // 从Gist加载数据
-            loadFromGist() {
+           async loadFromGist() {
                 if (!this.githubToken) return null;
                 
                 // 如果有已知的Gist ID，尝试获取它
@@ -1569,4 +1569,5 @@ function setupWebSocket() {
     </script>
 </body>
 </html>
+
 
