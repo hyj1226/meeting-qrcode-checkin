@@ -1346,11 +1346,6 @@
                 return;
             }
             
-            if (!token.startsWith('ghp_')) {
-                showToast('令牌格式不正确，应以ghp_开头', 'error');
-                return;
-            }
-            
             dataStore.setGithubToken(token);
             hideGithubModal();
             showToast('GitHub令牌已保存', 'success');
@@ -1473,3 +1468,4 @@
     </script>
 </body>
 </html>
+
