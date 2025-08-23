@@ -1071,158 +1071,163 @@
         }
         
         // 查找包含姓名的列
-        function findNameColumn(jsonData) {
-            if (!jsonData || jsonData.length === 0) return null;
-            
-            const first极速生成二维码Row = jsonData[0];
-            const possibleColumns = Object.keys(firstRow);
-            
-            // 查找包含"姓名"的列
-            for (const column of possibleColumns) {
-                if (column.includes('姓名') || column.toLowerCase().includes('name')) {
-                    return column;
-                }
-            }
-            
-            return possibleColumns[0] || null;
+        // 查找包含姓名的列
+function findNameColumn(jsonData) {
+    if (!jsonData || jsonData.length === 0) return null;
+    
+    const firstRow = jsonData[0];
+    const possibleColumns = Object.keys(firstRow);
+    
+    // 查找包含"姓名"的列
+    for (const column of possibleColumns) {
+        if (column.includes('姓名') || column.toLowerCase().includes('name')) {
+            return column;
         }
-        
-        // 查找包含部门的列
-        function findDeptColumn(jsonData) {
-            if (!jsonData || jsonData.length === 0) return null;
-            
-            const firstRow = jsonData[0];
-            const possibleColumns = Object.keys(firstRow);
-            
-            // 查找包含"部门"的列
-            for (const column of possibleColumns) {
-                if (column.includes('部门') || column.toLowerCase().includes('department')) {
-                    return column;
-                }
-            }
-            
-            return null;
+    }
+    
+    return possibleColumns[0] || null;
+}
+
+// 查找包含部门的列
+function findDeptColumn(jsonData) {
+    if (!jsonData || jsonData.length === 0) return null;
+    
+    const firstRow = jsonData[0];
+    const possibleColumns = Object.keys(firstRow);
+    
+    // 查找包含"部门"的列
+    for (const column of possibleColumns) {
+        if (column.includes('部门') || column.toLowerCase().includes('department')) {
+            return column;
         }
+    }
+    
+    return null;
+}
+
         
         // 更新UI显示
-        function updateUI() {
-            const stats = dataStore.getStats();
-            
-            // 更新统计数字
-            elements.statsTotal.textContent = stats.total;
-            elements.statsChecked.text极速生成二维码Content = stats.checked;
-            elements.statsUnchecked.textContent = stats.unchecked;
-            elements.uncheckedListCount.textContent = `${stats.unchecked}人`;
-            
-            // 更新部门统计图表
-            updateDepartmentChart(stats.departments);
-            
-            // 更新签到时间图表
-            updateTimeChart(stats.checkinTimes);
-            
-            // 更新未到人员列表
-            if (stats.total === 0) {
-                elements.uncheckedList.innerHTML = `
-                    <div class="text-center text-gray-500 py-10">
-                        <i class="fas fa-file-alt text-4xl mb-3 opacity-30"></i>
-                        <p>请先上传包含人员名单的Excel文件</p>
-                    </div>
-                `;
-            } else if (stats.unchecked === 0) {
-                elements.uncheckedList.innerHTML = `
-                    <div class="text-center text-gray-500极速生成二维码 py-10">
-                        <i class="fas fa-check-circle text-4xl mb-3 text-green-500"></i>
-                        <p>所有人均已签到</p>
-                    </div>
-                `;
-            } else {
-                // 按部门分组
-                const departments = {};
-                dataStore.uncheckedPersons.forEach(person => {
-                    if (!departments[person.department]) {
-                        departments[person.department] = [];
-                    }
-                    departments[person.department].push(person.name);
-                });
-                
-                let html = '';
-                for (const dept in departments) {
-                    html += `
-                        <div class="mb-5">
-                            <h3 class="font-medium text-gray-700 mb-2">${dept}</h3>
-                            <div class="grid grid-cols-2 sm:grid-cols-3 gap-2">
-                                ${departments[dept].map(name => `
-                                    <div class="bg-gray-50 p-2 rounded-lg border border-gray-200 text-sm">
-                                        ${name}
-                                    </div>
-                                `).join('')}
-                            </div>
-                        </div>
-                    `;
-                }
-                
-                elements.uncheckedList.innerHTML = html;
+        // 更新UI显示
+function updateUI() {
+    const stats = dataStore.getStats();
+    
+    // 更新统计数字
+    elements.statsTotal.textContent = stats.total;
+    elements.statsChecked.textContent = stats.checked;
+    elements.statsUnchecked.textContent = stats.unchecked;
+    elements.uncheckedListCount.textContent = `${stats.unchecked}人`;
+    
+    // 更新部门统计图表
+    updateDepartmentChart(stats.departments);
+    
+    // 更新签到时间图表
+    updateTimeChart(stats.checkinTimes);
+    
+    // 更新未到人员列表
+    if (stats.total === 0) {
+        elements.uncheckedList.innerHTML = `
+            <div class="text-center text-gray-500 py-10">
+                <i class="fas fa-file-alt text-4xl mb-3 opacity-30"></i>
+                <p>请先上传包含人员名单的Excel文件</p>
+            </div>
+        `;
+    } else if (stats.unchecked === 0) {
+        elements.uncheckedList.innerHTML = `
+            <div class="text-center text-gray-500 py-10">
+                <i class="fas fa-check-circle text-4xl mb-3 text-green-500"></i>
+                <p>所有人均已签到</p>
+            </div>
+        `;
+    } else {
+        // 按部门分组
+        const departments = {};
+        dataStore.uncheckedPersons.forEach(person => {
+            if (!departments[person.department]) {
+                departments[person.department] = [];
             }
-            
-            // 更新最近签到记录
-            updateRecentCheckins();
-            updateStatus('数据已更新');
+            departments[person.department].push(person.name);
+        });
+        
+        let html = '';
+        for (const dept in departments) {
+            html += `
+                <div class="mb-5">
+                    <h3 class="font-medium text-gray-700 mb-2">${dept}</h3>
+                    <div class="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                        ${departments[dept].map(name => `
+                            <div class="bg-gray-50 p-2 rounded-lg border border-gray-200 text-sm">
+                                ${name}
+                            </div>
+                        `).join('')}
+                    </div>
+                </div>
+            `;
         }
+        
+        elements.uncheckedList.innerHTML = html;
+    }
+    
+    // 更新最近签到记录
+    updateRecentCheckins();
+    updateStatus('数据已更新');
+}
+
         
         // 更新部门统计图表
-        function updateDepartmentChart(departments) {
-            const ctx = elements.departmentChart.getContext('2d');
-            
-            // 销毁旧图表
-            if (window.departmentChart) {
-                window.departmentChart.destroy();
-            }
-            
-            const deptNames = Object.keys(departments);
-            const checkedData = deptNames.map(dept => departments[dept].checked || 0);
-            const uncheckedData = deptNames.map(dept => (departments极速生成二维码[dept].total || 0) - (departments[dept].checked || 0));
-            
-            window.departmentChart = new Chart(ctx, {
-                type极速生成二维码: 'bar',
-                data: {
-                    labels: deptNames,
-                    datasets: [
-                        {
-                            label: '已签到',
-                            data: checkedData,
-                            backgroundColor: '#10B981',
-                        },
-                        {
-                            label: '未签到',
-                            data: uncheckedData,
-                            backgroundColor: '#EF4444',
-                        }
-                    ]
+        // 更新部门统计图表
+function updateDepartmentChart(departments) {
+    const ctx = elements.departmentChart.getContext('2d');
+    
+    // 销毁旧图表
+    if (window.departmentChart) {
+        window.departmentChart.destroy();
+    }
+    
+    const deptNames = Object.keys(departments);
+    const checkedData = deptNames.map(dept => departments[dept].checked || 0);
+    const uncheckedData = deptNames.map(dept => (departments[dept].total || 0) - (departments[dept].checked || 0));
+    
+    window.departmentChart = new Chart(ctx, {
+        type: 'bar',
+        data: {
+            labels: deptNames,
+            datasets: [
+                {
+                    label: '已签到',
+                    data: checkedData,
+                    backgroundColor: '#10B981',
                 },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: {
-                        legend: {
-                            position: 'top',
-                        },
-                        title: {
-                            display: true,
-                            text: '部门签到情况'
-                        }
-                    },
-                    scales: {
-                        y: {
-                            beginAtZero: true,
-                            ticks: {
-                                precision: 0
-                            }
-                        }
+                {
+                    label: '未签到',
+                    data: uncheckedData,
+                    backgroundColor: '#EF4444',
+                }
+            ]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    position: 'top',
+                },
+                title: {
+                    display: true,
+                    text: '部门签到情况'
+                }
+            },
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    ticks: {
+                        precision: 0
                     }
                 }
-            });
+            }
         }
-        
+    });
+}
+
         // 更新签到时间图表
         function updateTimeChart(checkinTimes) {
             const ctx = elements.timeChart.getContext('2d');
@@ -1506,75 +1511,77 @@
         }
         
         // 事件监听
-        function setupEventListeners() {
-            // Excel上传
-            elements.excelUpload.addEventListener('change', handleExcelUpload);
-            
-            // 签到表单提交
-            elements.checkinForm.addEventListener('submit', handleCheckinSubmit);
-            
-            // 返回主页面
-            elements.backToMain.addEventListener('click', showMainPage);
-            
-            // 关闭成功提示
-            elements.closeSuccess.addEventListener('click', () => {
-                elements.successModal.classList.remove('active');
-                // 在移动设备上返回主页面
-                if (window.innerWidth < 768) {
-                    showMainPage();
-                }
-            });
-            
-            // 导出按钮
-            document.getElementById('export-btn').addEventListener('click', () => {
-                if (dataStore.uncheckedPersons.length === 0) {
-                    showToast('没有未到人员可导出', 'info');
-                    return;
-                }
-                
-                // 创建工作簿
-                const wb = XLSX.utils.book_new();
-                
-                // 添加工作表
-                const wsData = [['姓名', '部门', '状态']];
-                
-                dataStore.allPersons.forEach(person => {
-                    const isChecked = dataStore.checkedPersons.includes(person.name);
-                    wsData.push([
-                        person.name,
-                        person.department,
-                        isChecked ? '已签到' : '未签到'
-                    ]);
-                });
-                
-                const ws = XLSX.utils.aoa_to_sheet(wsData);
-                XLSX.utils.book_append极速生成二维码_sheet(wb, ws, '签到统计');
-                
-                // 导出Excel
-                XLSX.writeFile(wb, '签到统计.xlsx');
-                showToast('导出成功', 'success');
-            });
-            
-            // GitHub设置
-            elements.setupGithub.addEventListener('click', showGithubModal);
-            elements.saveToken.addEventListener('click', setupGithubToken);
-            elements.cancelToken.addEventListener('click', hideGithubModal);
+        // 事件监听
+function setupEventListeners() {
+    // Excel上传
+    elements.excelUpload.addEventListener('change', handleExcelUpload);
+    
+    // 签到表单提交
+    elements.checkinForm.addEventListener('submit', handleCheckinSubmit);
+    
+    // 返回主页面
+    elements.backToMain.addEventListener('click', showMainPage);
+    
+    // 关闭成功提示
+    elements.closeSuccess.addEventListener('click', () => {
+        elements.successModal.classList.remove('active');
+        // 在移动设备上返回主页面
+        if (window.innerWidth < 768) {
+            showMainPage();
+        }
+    });
+    
+    // 导出按钮
+    document.getElementById('export-btn').addEventListener('click', () => {
+        if (dataStore.uncheckedPersons.length === 0) {
+            showToast('没有未到人员可导出', 'info');
+            return;
         }
         
+        // 创建工作簿
+        const wb = XLSX.utils.book_new();
+        
+        // 添加工作表
+        const wsData = [['姓名', '部门', '状态']];
+        
+        dataStore.allPersons.forEach(person => {
+            const isChecked = dataStore.checkedPersons.includes(person.name);
+            wsData.push([
+                person.name,
+                person.department,
+                isChecked ? '已签到' : '未签到'
+            ]);
+        });
+        
+        const ws = XLSX.utils.aoa_to_sheet(wsData);
+        XLSX.utils.book_append_sheet(wb, ws, '签到统计');
+        
+        // 导出Excel
+        XLSX.writeFile(wb, '签到统计.xlsx');
+        showToast('导出成功', 'success');
+    });
+    
+    // GitHub设置
+    elements.setupGithub.addEventListener('click', showGithubModal);
+    elements.saveToken.addEventListener('click', setupGithubToken);
+    elements.cancelToken.addEventListener('click', hideGithubModal);
+}
+
         // 初始化应用
-        async function initApp() {
-            await dataStore.init();
-            setupEventListeners();
-            updateUI();
-            startAutoRefresh();
-            
-            // 立即生成二维码
-            generateQRCode();
-            checkCheckinMode();
-        }
-        
-        // 启动应用
-        document.addEventListener('DOMContentLoaded', initApp);
+async function initApp() {
+    await dataStore.init();
+    setupEventListeners();
+    updateUI();
+    startAutoRefresh();
+    
+    // 立即生成二维码
+    generateQRCode();
+    checkCheckinMode();
+}
+
+// 启动应用
+document.addEventListener('DOMContentLoaded', initApp);
+
     </script>
 </body>
 </html>
