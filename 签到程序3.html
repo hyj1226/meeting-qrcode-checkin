@@ -3,14 +3,13 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>智能二维码签到系统</title>
+    <title>会议二维码签到系统</title>
     <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.1/build/qrcode.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-   
-<button id="reset-btn" class="btn-primary bg-red-500 hover:bg-red-600 ml-3 text-sm">
+        <button id="reset-btn" class="btn-primary bg-red-500 hover:bg-red-600 ml-3 text-sm">
     <i class="fas fa-trash-alt mr-1"></i>重置
 </button>
     <style>
@@ -330,19 +329,10 @@
         <!-- 标题区域 -->
         <header class="text-center mb-6 fade-in">
             <h1 class="text-3xl md:text-4xl font-bold mb-3 header-gradient">
-                <i class="fas fa-qrcode mr-2"></i>智能二维码签到系统
+                <i class="fas fa-qrcode mr-2"></i>会议二维码签到系统
             </h1>
-            <p class="text-gray-600 max-w-2xl mx-auto">实时统计签到情况，支持Excel名单导入，跨设备签到，多维度数据分析</p>
+            <p class="text-gray-600 max-w-2xl mx-auto">实时统计签到情况，支持Excel名单导入，跨设备签到</p>
         </header>
-        
-        <!-- 数据同步说明 -->
-        <div class="sync-warning mb-6">
-            <h3 class="font-bold text-lg text-blue-800 mb-2 flex items-center">
-                <i class="fas fa-sync-alt mr-2"></i>数据同步说明
-            </h3>
-            <p class="text-blue-700">本系统使用GitHub Gist实现跨设备数据同步，确保手机和电脑数据实时同步。</p>
-            <p class="text-blue-700">首次使用需要<a href="javascript:void(0)" id="setup-github" class="font-bold underline">设置GitHub访问令牌</a>。</p>
-        </div>
         
         <!-- 主要内容区域 -->
         <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -360,14 +350,6 @@
                                     <p>正在生成二维码...</p>
                                 </div>
                             </div>
-                        </div>
-                        
-                        <!-- 本地文件警告 -->
-                        <div id="file-warning" class="file-warning">
-                            <i class="fas fa-exclamation-circle text-red-500 text-xl mb-2"></i>
-                            <p class="font-medium">检测到本地文件访问</p>
-                            <p class="text-sm">手机无法访问电脑上的本地文件路径</p>
-                            <p class="text-sm mt-2">请使用HTTP服务器部署</p>
                         </div>
                         
                         <p class="text-gray-600 text-center mb-4">使用手机扫描二维码进行签到</p>
@@ -401,7 +383,7 @@
                     <div class="w-full">
                         <div class="border-t border-gray-200 pt-4">
                             <label for="excel-upload" class="block text-sm font-medium text-gray-700 mb-2">
-                                <i class="fas fa-file-excel text-green-600 mr-1"></i>上传应到人员Excel
+                                <i class="fas fa-file-excel text-green-600 mr-1"></i>上传参会人员名单
                             </label>
                             <div class="flex items-center">
                                 <input id="excel-upload" type="file" accept=".xlsx, .xls" class="hidden" />
@@ -451,6 +433,9 @@
                             <button id="export-btn" class="btn-primary ml-3 text-sm">
                                 <i class="fas fa-download mr-1"></i>导出
                             </button>
+                            <button id="reset-btn" class="btn-primary bg-red-500 hover:bg-red-600 ml-3 text-sm">
+                                <i class="fas fa-trash-alt mr-1"></i>重置
+                            </button>
                         </div>
                     </div>
                     
@@ -478,44 +463,13 @@
         </div>
     </div>
     
-    <!-- GitHub设置模态框 -->
-    <div id="github-modal" class="success-modal">
-        <div class="success-content">
-            <div class="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                <i class="fas fa-github text-2xl text-blue-500"></i>
-            </div>
-            <h3 class="text-xl font-bold mb-2">GitHub API设置</h3>
-            <p class="text-gray-600 mb-4">请输入您的GitHub个人访问令牌(PAT)</p>
-            
-            <div class="mb-4">
-                <input type="password" id="github-token" placeholder="ghp_xxxxxxxxxxxxxxxxxxxx" 
-                    class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
-            </div>
-            
-            <p class="text-xs text-gray-500 mb-4">
-                需要创建具有gist权限的令牌。
-                <a href="https://docs.github.com/en/authentication/keeping-your-account-and-data-secure/creating-a-personal-access-token" 
-                   target="_blank" class="text-blue-500 underline">如何创建？</a>
-            </p>
-            
-            <div class="flex space-x-3">
-                <button id="save-token" class="btn-primary flex-1 py-2">
-                    保存
-                </button>
-                <button id="cancel-token" class="btn-primary bg-gray-500 flex-1 py-2">
-                    取消
-                </button>
-            </div>
-        </div>
-    </div>
-    
     <!-- 移动端签到表单 -->
     <div id="checkin-form-container" class="checkin-form-container">
         <div class="mb-6">
             <button id="back-to-main" class="text-gray-500 hover:text-gray-700 transition-colors flex items-center mb-4">
                 <i class="fas fa-arrow-left mr-2"></i>返回
             </button>
-            <h2 class="text-2xl font-bold text-gray-800 mb-2">活动签到</h2>
+            <h2 class="text-2xl font-bold text-gray-800 mb-2">会议签到</h2>
             <p class="text-gray-600">请填写您的信息完成签到</p>
         </div>
         
@@ -534,14 +488,14 @@
                     <i class="fas fa-building mr-1"></i>部门
                 </label>
                 <select id="department" name="department"
-                    class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus极速生成二维码-border-blue-500 transition-all">
+                    class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all">
                     <option value="">请选择部门</option>
-                    <option value="技术部">技术部</option>
-                    <option value="市场部">市场部</option>
-                    <option极速生成二维码 value="销售部">销售部</option>
+                    <option value="技术部">研发部</option>
+                    <option value="市场部">品质部</option>
+                    <option value="销售部">销售部</option>
                     <option value="人力资源">人力资源</option>
                     <option value="财务部">财务部</option>
-                    <option value="行政部">行政部</option>
+                    <option value="行政部">总经办</option>
                 </select>
             </div>
             
@@ -549,7 +503,7 @@
                 <label for="note" class="block text-sm font-medium text-gray-700 mb-1">
                     <i class="fas fa-pencil-alt mr-1"></i>备注 (可选)
                 </label>
-                <textarea id="note极速生成二维码" name="note" rows="2"
+                <textarea id="note" name="note" rows="2"
                     class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
                     placeholder="如有需要，请填写备注信息"></textarea>
             </div>
@@ -559,8 +513,8 @@
             </button>
         </form>
         
-        <div class="mt-8 text-center text-gray极速生成二维码-500 text-sm">
-            <p>智能签到系统 &copy; 2023</p>
+        <div class="mt-8 text-center text-gray-500 text-sm">
+            <p>会议签到系统 &copy; 2023</p>
         </div>
     </div>
     
@@ -581,9 +535,8 @@
     <script>
         // GitHub Gist存储配置
         const GIST_CONFIG = {
-            id: localStorage.getItem('checkinGistId'),
             filename: 'checkin-data.json',
-            description: '智能签到系统数据存储'
+            description: '会议签到系统数据存储'
         };
         
         // 数据存储
@@ -608,7 +561,7 @@
                         if (data) {
                             this.allPersons = data.allPersons || [];
                             this.checkedPersons = data.checkedPersons || [];
-                            this.uncheckedPersons = data.uncheckedPersons极速生成二维码 || [];
+                            this.uncheckedPersons = data.uncheckedPersons || [];
                             this.departments = data.departments || {};
                             this.checkinTimes = data.checkinTimes || [];
                             updateStatus('云端数据加载成功');
@@ -689,31 +642,6 @@
                     }
                 }
                 
-                // 如果没有已知的Gist或获取失败，尝试查找现有的
-                try {
-                    const response = await fetch('极速生成二维码https://api.github.com/gists', {
-                        headers: {
-                            'Authorization': `token ${this.githubToken}`,
-                            'Accept': 'application/vnd.github.v3+json'
-                        }
-                    });
-                    
-                    if (response.ok) {
-                        const gists = await response.json();
-                        for (const gist of gists) {
-                            if (gist.description === GIST_CONFIG.description && 
-                                gist.files && gist.files[GIST_CONFIG.filename]) {
-                                this.gistId = gist.id;
-                                localStorage.setItem('checkinGistId', gist.id);
-                                const content = gist.files[GIST_CONFIG.filename].content;
-                                return JSON.parse(content);
-                            }
-                        }
-                    }
-                } catch (error) {
-                    console.error('查找Gist失败:', error);
-                }
-                
                 return null;
             },
             
@@ -742,7 +670,7 @@
                 let response;
                 
                 // 如果有已知的Gist ID，更新它
-                if (this.gist极速生成二维码Id) {
+                if (this.gistId) {
                     response = await fetch(`https://api.github.com/gists/${this.gistId}`, {
                         method: 'PATCH',
                         headers: {
@@ -784,12 +712,12 @@
             // 规范化姓名（去除空格、转换为统一大小写等）
             normalizeName(name) {
                 return name.trim()
-                    .replace(/\s+/g, ' ')  // 将多个空格替换为一个
-                    .toLowerCase()         // 转换为小写
-                    .normalize('NFC');     // 统一Unicode格式
+                    .replace(/\s+/g, ' ')
+                    .toLowerCase()
+                    .normalize('NFC');
             },
             
-            // 检查姓名是否在名单中（使用规范化比较）
+            // 检查姓名是否在名单中
             isNameInList(inputName) {
                 const normalizedInput = this.normalizeName(inputName);
                 return this.allPersons.some(person => 
@@ -797,7 +725,7 @@
                 );
             },
             
-            // 检查是否已签到（使用规范化比较）
+            // 检查是否已签到
             isAlreadyChecked(inputName) {
                 const normalizedInput = this.normalizeName(inputName);
                 return this.checkedPersons.some(checkedName => 
@@ -814,12 +742,12 @@
             addCheckedPerson(name, department = '未指定') {
                 const normalizedName = this.normalizeName(name);
                 
-                // 检查是否已签到（使用规范化比较）
+                // 检查是否已签到
                 if (this.isAlreadyChecked(normalizedName)) {
                     return false;
                 }
                 
-                // 添加到已签到列表（存储原始姓名）
+                // 添加到已签到列表
                 this.checkedPersons.push(name);
                 this.checkinTimes.push(new Date().toISOString());
                 
@@ -834,25 +762,25 @@
                 return true;
             },
             
-           updateUnchecked() {
-    this.uncheckedPersons = this.allPersons.filter(
-        person => !this.checkedPersons.includes(person.name)
-    );
-    
-    // 初始化部门统计
-    this.departments = {};
-    this.allPersons.forEach(person => {
-        const dept = person.department || '未指定';
-        if (!this.departments[dept]) {
-            this.departments[dept] = { total: 0, checked: 0 };
-        }
-        this.departments[dept].total += 1;
-        
-        if (this.checkedPersons.includes(person.name)) {
-            this.departments[dept].checked += 1;
-        }
-    });
-},
+            updateUnchecked() {
+                this.uncheckedPersons = this.allPersons.filter(
+                    person => !this.checkedPersons.includes(person.name)
+                );
+                
+                // 初始化部门统计
+                this.departments = {};
+                this.allPersons.forEach(person => {
+                    const dept = person.department || '未指定';
+                    if (!this.departments[dept]) {
+                        this.departments[dept] = { total: 0, checked: 0 };
+                    }
+                    this.departments[dept].total += 1;
+                    
+                    if (this.checkedPersons.includes(person.name)) {
+                        this.departments[dept].checked += 1;
+                    }
+                });
+            },
             
             getStats() {
                 return {
@@ -862,6 +790,16 @@
                     departments: this.departments,
                     checkinTimes: this.checkinTimes
                 };
+            },
+            
+            // 重置所有数据
+            reset() {
+                this.allPersons = [];
+                this.checkedPersons = [];
+                this.uncheckedPersons = [];
+                this.departments = {};
+                this.checkinTimes = [];
+                this.save();
             }
         };
         
@@ -886,14 +824,10 @@
             timeChart: document.getElementById('time-chart'),
             recentCheckins: document.getElementById('recent-checkins'),
             statusText: document.getElementById('status-text'),
-            fileWarning: document.getElementById('file-warning'),
-            githubModal: document.getElementById('github-modal'),
-            githubToken: document.getElementById('github-token'),
-            saveToken: document.getElementById('save-token'),
-            cancelToken: document.getElementById('cancel-token'),
-            setupGithub: document.getElementById('setup-github'),
+            githubStatus: document.getElementById('github-status'),
             countdown: document.getElementById('countdown'),
-            githubStatus: document.getElementById('github-status')
+            exportBtn: document.getElementById('export-btn'),
+            resetBtn: document.getElementById('reset-btn')
         };
         
         // 更新状态信息
@@ -911,12 +845,12 @@
                     elements.githubStatus.innerHTML = '<i class="fab fa-github"></i> 已连接';
                 } else {
                     elements.githubStatus.className = 'github-status disconnected';
-                    elements.githubStatus.innerHTML = '<i class="fab极速生成二维码 fa-github"></i> 未连接';
+                    elements.githubStatus.innerHTML = '<i class="fab fa-github"></i> 未连接';
                 }
             }
         }
         
-        // 生成二维码（修复版）
+        // 生成二维码
         function generateQRCode() {
             try {
                 updateStatus('生成二维码中...');
@@ -926,23 +860,16 @@
                 // 检测URL协议
                 const isLocalFile = window.location.protocol === 'file:';
                 
-                // 如果是本地文件，显示警告
                 if (isLocalFile) {
-                    elements.fileWarning.style.display = 'block';
                     updateStatus('本地环境，手机无法访问');
-                    
-                    // 显示错误信息
                     qrcodeElement.innerHTML = `
                         <div class="flex flex-col items-center justify-center h-full text-red-500 p-4">
                             <i class="fas fa-exclamation-triangle text-2xl mb-2"></i>
                             <p class="text-center">本地文件环境</p>
-                            <p class="text-xs mt-2 text-center">手机无法访问电脑上的本地文件路径</p>
                             <p class="text-xs mt-2 text-center">请使用HTTP服务器部署</p>
                         </div>
                     `;
                     return;
-                } else {
-                    elements.fileWarning.style.display = 'none';
                 }
                 
                 // 生成动态URL - 使用当前URL
@@ -958,7 +885,6 @@
                 canvas.style.display = 'block';
                 qrcodeElement.appendChild(canvas);
                 
-                // 生成二维码
                 QRCode.toCanvas(canvas, checkinUrl, {
                     width: 256,
                     margin: 1,
@@ -972,10 +898,9 @@
                         console.error('生成二维码失败:', error);
                         updateStatus('二维码生成失败');
                         qrcodeElement.innerHTML = `
-                            <div class="flex flex-col items-center justify-center h-full text-red极速生成二维码-500 p-4">
+                            <div class="flex flex-col items-center justify-center h-full text-red-500 p-4">
                                 <i class="fas fa-exclamation-triangle text-2xl mb-2"></i>
                                 <p class="text-center">二维码生成失败</p>
-                                <p class="text-xs mt-2">${error.message}</极速生成二维码p>
                                 <button onclick="generateQRCode()" class="mt-4 px-4 py-2 bg-blue-500 text-white rounded-lg">
                                     重试
                                 </button>
@@ -994,7 +919,6 @@
                     <div class="flex flex-col items-center justify-center h-full text-red-500 p-4">
                         <i class="fas fa-exclamation-triangle text-2xl mb-2"></i>
                         <p class="text-center">二维码加载出错</p>
-                        <p class="text-xs mt-2">${error.message}</p>
                         <button onclick="generateQRCode()" class="mt-4 px-4 py-2 bg-blue-500 text-white rounded-lg">
                             重试
                         </button>
@@ -1013,275 +937,216 @@
                 updateStatus('签到表单已打开');
             }
         }
-		
-		// 1. 动态生成部门选项
-function updateDepartmentOptions() {
-    const departmentSelect = document.getElementById('department');
-    
-    // 清空现有选项（保留第一个提示选项）
-    while (departmentSelect.options.length > 1) {
-        departmentSelect.remove(1);
-    }
-    
-    // 从数据中获取所有部门
-    const departments = new Set();
-    dataStore.allPersons.forEach(person => {
-        if (person.department) {
-            departments.add(person.department);
-        }
-    });
-    
-    // 如果有部门数据，使用实际部门
-    if (departments.size > 0) {
-        departments.forEach(dept => {
-            const option = document.createElement('option');
-            option.value = dept;
-            option.textContent = dept;
-            departmentSelect.appendChild(option);
-        });
-    } else {
-        // 否则使用默认部门选项
-        const defaultDepts = ['技术部', '市场部', '销售部', '人力资源', '财务部', '行政部'];
-        defaultDepts.forEach(dept => {
-            const option = document.createElement('option');
-            option.value = dept;
-            option.textContent = dept;
-            departmentSelect.appendChild(option);
-        });
-    }
-}
-
-// 2. 重置功能
-function resetAllData() {
-    if (confirm('确定要重置所有数据吗？这将清空所有签到记录和人员名单。')) {
-        dataStore.allPersons = [];
-        dataStore.checkedPersons = [];
-        dataStore.uncheckedPersons = [];
-        dataStore.departments = {};
-        dataStore.checkinTimes = [];
         
-        // 清除本地存储
-        localStorage.removeItem('checkinData');
-        
-        // 保存到云端
-        dataStore.save();
-        
-        // 更新UI
-        updateUI();
-        showToast('所有数据已重置', 'success');
-    }
-}
-function findNameColumn(jsonData) {
-    if (!jsonData || jsonData.length === 0) return null;
-    
-    const firstRow = jsonData[0];
-    const possibleColumns = Object.keys(firstRow);
-    
-    // 查找包含"姓名"的列（不区分大小写）
-    for (const column of possibleColumns) {
-        if (column.includes('姓名') || column.toLowerCase().includes('name')) {
-            return column;
-        }
-    }
-    
-    // 如果没有找到，尝试使用第一列
-    return possibleColumns[0] || null;
-}
-
-function findDeptColumn(jsonData) {
-    if (!jsonData || jsonData.length === 0) return null;
-    
-    const firstRow = jsonData[0];
-    const possibleColumns = Object.keys(firstRow);
-    
-    // 查找包含"部门"的列（不区分大小写）
-    for (const column of possibleColumns) {
-        if (column.includes('部门') || column.toLowerCase().includes('department')) {
-            return column;
-        }
-    }
-    
-    return null;
-}
-        
-       // 3. 增强的Excel处理
-function handleExcelUpload(e) {
-    const file = e.target.files[0];
-    if (!file) return;
-    
-    elements.fileName.textContent = file.name;
-    
-    const reader = new FileReader();
-    reader.onload = function(e) {
-        try {
-            updateStatus('解析Excel中...');
-            const data = new Uint8Array(e.target.result);
-            const workbook = XLSX.read(data, { type: 'array' });
-            const firstSheetName = workbook.SheetNames[0];
-            const worksheet = workbook.Sheets[firstSheetName];
-            const jsonData = XLSX.utils.sheet_to_json(worksheet);
+        // 查找包含姓名的列
+        function findNameColumn(jsonData) {
+            if (!jsonData || jsonData.length === 0) return null;
             
-            const nameColumn = findNameColumn(jsonData);
-            if (!nameColumn) {
-                showToast('Excel文件中未找到包含"姓名"的列', 'error');
-                return;
-            }
+            const firstRow = jsonData[0];
+            const possibleColumns = Object.keys(firstRow);
             
-            const deptColumn = findDeptColumn(jsonData);
-            
-            const persons = [];
-            jsonData.forEach(row => {
-                const name = row[nameColumn]?.toString().trim();
-                const department = deptColumn ? row[deptColumn]?.toString().trim() : '';
-                
-                if (name) {
-                    persons.push({ name, department });
+            // 查找包含"姓名"的列（不区分大小写）
+            for (const column of possibleColumns) {
+                if (column.includes('姓名') || column.toLowerCase().includes('name')) {
+                    return column;
                 }
-            });
-            
-            if (persons.length === 0) {
-                showToast('未从Excel文件中提取到有效姓名数据', 'error');
-                return;
             }
             
-            // 更新数据
-            dataStore.setAllPersons(persons);
-            
-            // 更新部门选项
-            updateDepartmentOptions();
-            
-            // 更新UI
-            updateUI();
-            showToast(`成功导入 ${persons.length} 名人员信息`, 'success');
-            
-        } catch (error) {
-            console.error('解析Excel文件失败:', error);
-            showToast('解析Excel文件失败，请确保文件格式正确', 'error');
+            // 如果没有找到，尝试使用第一列
+            return possibleColumns[0] || null;
         }
-    };
-    reader.readAsArrayBuffer(file);
-}
+        
+        // 查找包含部门的列
+        function findDeptColumn(jsonData) {
+            if (!jsonData || jsonData.length === 0) return null;
+            
+            const firstRow = jsonData[0];
+            const possibleColumns = Object.keys(firstRow);
+            
+            // 查找包含"部门"的列（不区分大小写）
+            for (const column of possibleColumns) {
+                if (column.includes('部门') || column.toLowerCase().includes('department')) {
+                    return column;
+                }
+            }
+            
+            return null;
+        }
+        
+        // 处理Excel文件上传
+        function handleExcelUpload(e) {
+            const file = e.target.files[0];
+            if (!file) return;
+            
+            elements.fileName.textContent = file.name;
+            
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    updateStatus('解析Excel中...');
+                    const data = new Uint8Array(e.target.result);
+                    const workbook = XLSX.read(data, { type: 'array' });
+                    const firstSheetName = workbook.SheetNames[0];
+                    const worksheet = workbook.Sheets[firstSheetName];
+                    const jsonData = XLSX.utils.sheet_to_json(worksheet);
+                    
+                    const nameColumn = findNameColumn(jsonData);
+                    if (!nameColumn) {
+                        showToast('Excel文件中未找到包含"姓名"的列', 'error');
+                        return;
+                    }
+                    
+                    const deptColumn = findDeptColumn(jsonData);
+                    
+                    const persons = [];
+                    jsonData.forEach(row => {
+                        const name = row[nameColumn]?.toString().trim();
+                        const department = deptColumn ? row[deptColumn]?.toString().trim() : '';
+                        
+                        if (name) {
+                            persons.push({ name, department });
+                        }
+                    });
+                    
+                    if (persons.length === 0) {
+                        showToast('未从Excel文件中提取到有效姓名数据', 'error');
+                        return;
+                    }
+                    
+                    // 更新数据
+                    dataStore.setAllPersons(persons);
+                    
+                    // 更新UI
+                    updateUI();
+                    showToast(`成功导入 ${persons.length} 名人员信息`, 'success');
+                    
+                } catch (error) {
+                    console.error('解析Excel文件失败:', error);
+                    showToast('解析Excel文件失败，请确保文件格式正确', 'error');
+                }
+            };
+            reader.readAsArrayBuffer(file);
+        }
+        
         // 更新UI显示
-function updateUI() {
-    const stats = dataStore.getStats();
-    
-    // 更新统计数字
-    elements.statsTotal.textContent = stats.total;
-    elements.statsChecked.textContent = stats.checked;
-    elements.statsUnchecked.textContent = stats.unchecked;
-    elements.uncheckedListCount.textContent = `${stats.unchecked}人`;
-    
-    // 更新部门统计图表
-    updateDepartmentChart(stats.departments);
-    
-    // 更新签到时间图表
-    updateTimeChart(stats.checkinTimes);
-    
-    // 更新未到人员列表
-    if (stats.total === 0) {
-        elements.uncheckedList.innerHTML = `
-            <div class="text-center text-gray-500 py-10">
-                <i class="fas fa-file-alt text-4xl mb-3 opacity-30"></i>
-                <p>请先上传包含人员名单的Excel文件</p>
-            </div>
-        `;
-    } else if (stats.unchecked === 0) {
-        elements.uncheckedList.innerHTML = `
-            <div class="text-center text-gray-500 py-10">
-                <i class="fas fa-check-circle text-4xl mb-3 text-green-500"></i>
-                <p>所有人均已签到</p>
-            </div>
-        `;
-    } else {
-        // 按部门分组
-        const departments = {};
-        dataStore.uncheckedPersons.forEach(person => {
-            if (!departments[person.department]) {
-                departments[person.department] = [];
-            }
-            departments[person.department].push(person.name);
-        });
-        
-        let html = '';
-        for (const dept in departments) {
-            html += `
-                <div class="mb-5">
-                    <h3 class="font-medium text-gray-700 mb-2">${dept}</h3>
-                    <div class="grid grid-cols-2 sm:grid-cols-3 gap-2">
-                        ${departments[dept].map(name => `
-                            <div class="bg-gray-50 p-2 rounded-lg border border-gray-200 text-sm">
-                                ${name}
-                            </div>
-                        `).join('')}
+        function updateUI() {
+            const stats = dataStore.getStats();
+            
+            // 更新统计数字
+            elements.statsTotal.textContent = stats.total;
+            elements.statsChecked.textContent = stats.checked;
+            elements.statsUnchecked.textContent = stats.unchecked;
+            elements.uncheckedListCount.textContent = `${stats.unchecked}人`;
+            
+            // 更新部门统计图表
+            updateDepartmentChart(stats.departments);
+            
+            // 更新签到时间图表
+            updateTimeChart(stats.checkinTimes);
+            
+            // 更新未到人员列表
+            if (stats.total === 0) {
+                elements.uncheckedList.innerHTML = `
+                    <div class="text-center text-gray-500 py-10">
+                        <i class="fas fa-file-alt text-4xl mb-3 opacity-30"></i>
+                        <p>请先上传包含人员名单的Excel文件</p>
                     </div>
-                </div>
-            `;
+                `;
+            } else if (stats.unchecked === 0) {
+                elements.uncheckedList.innerHTML = `
+                    <div class="text-center text-gray-500 py-10">
+                        <i class="fas fa-check-circle text-4xl mb-3 text-green-500"></i>
+                        <p>所有人均已签到</p>
+                    </div>
+                `;
+            } else {
+                // 按部门分组
+                const departments = {};
+                dataStore.uncheckedPersons.forEach(person => {
+                    if (!departments[person.department]) {
+                        departments[person.department] = [];
+                    }
+                    departments[person.department].push(person.name);
+                });
+                
+                let html = '';
+                for (const dept in departments) {
+                    html += `
+                        <div class="mb-5">
+                            <h3 class="font-medium text-gray-700 mb-2">${dept}</h3>
+                            <div class="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                                ${departments[dept].map(name => `
+                                    <div class="bg-gray-50 p-2 rounded-lg border border-gray-200 text-sm">
+                                        ${name}
+                                    </div>
+                                `).join('')}
+                            </div>
+                        </div>
+                    `;
+                }
+                
+                elements.uncheckedList.innerHTML = html;
+            }
+            
+            // 更新最近签到记录
+            updateRecentCheckins();
+            updateStatus('数据已更新');
         }
         
-        elements.uncheckedList.innerHTML = html;
-    }
-    
-    // 更新最近签到记录
-    updateRecentCheckins();
-    updateStatus('数据已更新');
-}
-
-        
         // 更新部门统计图表
-        // 更新部门统计图表
-function updateDepartmentChart(departments) {
-    const ctx = elements.departmentChart.getContext('2d');
-    
-    // 销毁旧图表
-    if (window.departmentChart) {
-        window.departmentChart.destroy();
-    }
-    
-    const deptNames = Object.keys(departments);
-    const checkedData = deptNames.map(dept => departments[dept].checked || 0);
-    const uncheckedData = deptNames.map(dept => (departments[dept].total || 0) - (departments[dept].checked || 0));
-    
-    window.departmentChart = new Chart(ctx, {
-        type: 'bar',
-        data: {
-            labels: deptNames,
-            datasets: [
-                {
-                    label: '已签到',
-                    data: checkedData,
-                    backgroundColor: '#10B981',
+        function updateDepartmentChart(departments) {
+            const ctx = elements.departmentChart.getContext('2d');
+            
+            // 销毁旧图表
+            if (window.departmentChart) {
+                window.departmentChart.destroy();
+            }
+            
+            const deptNames = Object.keys(departments);
+            const checkedData = deptNames.map(dept => departments[dept].checked || 0);
+            const uncheckedData = deptNames.map(dept => (departments[dept].total || 0) - (departments[dept].checked || 0));
+            
+            window.departmentChart = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: deptNames,
+                    datasets: [
+                        {
+                            label: '已签到',
+                            data: checkedData,
+                            backgroundColor: '#10B981',
+                        },
+                        {
+                            label: '未签到',
+                            data: uncheckedData,
+                            backgroundColor: '#EF4444',
+                        }
+                    ]
                 },
-                {
-                    label: '未签到',
-                    data: uncheckedData,
-                    backgroundColor: '#EF4444',
-                }
-            ]
-        },
-        options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            plugins: {
-                legend: {
-                    position: 'top',
-                },
-                title: {
-                    display: true,
-                    text: '部门签到情况'
-                }
-            },
-            scales: {
-                y: {
-                    beginAtZero: true,
-                    ticks: {
-                        precision: 0
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'top',
+                        },
+                        title: {
+                            display: true,
+                            text: '部门签到情况'
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            ticks: {
+                                precision: 0
+                            }
+                        }
                     }
                 }
-            }
+            });
         }
-    });
-}
-
+        
         // 更新签到时间图表
         function updateTimeChart(checkinTimes) {
             const ctx = elements.timeChart.getContext('2d');
@@ -1366,7 +1231,7 @@ function updateDepartmentChart(departments) {
                 const time = new Date().toLocaleTimeString();
                 
                 const card = document.createElement('div');
-                card.className = 'bg-white rounded-lg p极速生成二维码-4 shadow-sm border border-gray-100';
+                card.className = 'bg-white rounded-lg p-4 shadow-sm border border-gray-100';
                 card.innerHTML = `
                     <div class="flex justify-between items-start">
                         <div>
@@ -1393,7 +1258,7 @@ function updateDepartmentChart(departments) {
                 return;
             }
             
-            // 检查是否在应到名单中（使用规范化比较）
+            // 检查是否在应到名单中
             const isInList = dataStore.isNameInList(name);
             if (!isInList) {
                 if (!confirm(`"${name}" 不在应到名单中，是否仍要签到？`)) {
@@ -1401,7 +1266,7 @@ function updateDepartmentChart(departments) {
                 }
             }
             
-            // 检查是否已签到（使用规范化比较）
+            // 检查是否已签到
             if (dataStore.isAlreadyChecked(name)) {
                 showToast('您已签到，无需重复提交', 'info');
                 return;
@@ -1431,7 +1296,7 @@ function updateDepartmentChart(departments) {
             const toast = document.createElement('div');
             toast.className = `fixed top-4 right-4 px-4 py-3 rounded-lg shadow-lg z-50 transition-all duration-300 transform translate-y-0 opacity-100 ${
                 type === 'success' ? 'bg-green-50 text-green-800 border border-green-200' :
-                type === 'error极速生成二维码' ? 'bg-red-50 text-red-800 border border-red-200' :
+                type === 'error' ? 'bg-red-50 text-red-800 border border-red-200' :
                 type === 'info' ? 'bg-blue-50 text-blue-800 border border-blue-200' :
                 'bg-yellow-50 text-yellow-800 border border-yellow-200'
             }`;
@@ -1469,34 +1334,6 @@ function updateDepartmentChart(departments) {
             elements.checkinFormContainer.classList.remove('active');
             elements.successModal.classList.remove('active');
             updateStatus('系统运行中');
-        }
-        
-        // 显示GitHub设置模态框
-        function showGithubModal() {
-            elements.githubModal.classList.add('active');
-        }
-        
-        // 隐藏GitHub设置模态框
-        function hideGithubModal() {
-            elements.githubModal.classList.remove('active');
-        }
-        
-        // 设置GitHub令牌
-        function setupGithubToken() {
-            const token = elements.githubToken.value.trim();
-            if (!token) {
-                showToast('请输入GitHub访问令牌', 'error');
-                return;
-            }
-            
-            dataStore.setGithubToken(token);
-            hideGithubModal();
-            showToast('GitHub令牌已保存', 'success');
-            
-            // 尝试保存数据到Gist
-            dataStore.save().then(() => {
-                updateStatus('数据已同步到云端');
-            });
         }
         
         // 5秒自动刷新机制
@@ -1564,79 +1401,86 @@ function updateDepartmentChart(departments) {
             }
         }
         
-        // 事件监听
-        // 事件监听
-function setupEventListeners() {
-    // Excel上传
-    elements.excelUpload.addEventListener('change', handleExcelUpload);
-    
-    // 签到表单提交
-    elements.checkinForm.addEventListener('submit', handleCheckinSubmit);
-    
-    // 返回主页面
-    elements.backToMain.addEventListener('click', showMainPage);
-    
-    // 关闭成功提示
-    elements.closeSuccess.addEventListener('click', () => {
-        elements.successModal.classList.remove('active');
-        // 在移动设备上返回主页面
-        if (window.innerWidth < 768) {
-            showMainPage();
+        // 导出数据为Excel
+        function exportToExcel() {
+            if (dataStore.uncheckedPersons.length === 0) {
+                showToast('没有未到人员可导出', 'info');
+                return;
+            }
+            
+            // 创建工作簿
+            const wb = XLSX.utils.book_new();
+            
+            // 添加工作表
+            const wsData = [['姓名', '部门', '状态']];
+            
+            dataStore.allPersons.forEach(person => {
+                const isChecked = dataStore.checkedPersons.includes(person.name);
+                wsData.push([
+                    person.name,
+                    person.department,
+                    isChecked ? '已签到' : '未签到'
+                ]);
+            });
+            
+            const ws = XLSX.utils.aoa_to_sheet(wsData);
+            XLSX.utils.book_append_sheet(wb, ws, '签到统计');
+            
+            // 导出Excel
+            XLSX.writeFile(wb, '签到统计.xlsx');
+            showToast('导出成功', 'success');
         }
-    });
-    // 5. 添加重置按钮事件监听
-document.getElementById('reset-btn').addEventListener('click', resetAllData);
-    // 导出按钮
-    document.getElementById('export-btn').addEventListener('click', () => {
-        if (dataStore.uncheckedPersons.length === 0) {
-            showToast('没有未到人员可导出', 'info');
-            return;
+        
+        // 重置所有数据
+        function resetAllData() {
+            if (confirm('确定要重置所有数据吗？这将清空所有签到记录和人员名单。')) {
+                dataStore.reset();
+                updateUI();
+                showToast('所有数据已重置', 'success');
+            }
         }
         
-        // 创建工作簿
-        const wb = XLSX.utils.book_new();
+        // 事件监听
+        function setupEventListeners() {
+            // Excel上传
+            elements.excelUpload.addEventListener('change', handleExcelUpload);
+            
+            // 签到表单提交
+            elements.checkinForm.addEventListener('submit', handleCheckinSubmit);
+            
+            // 返回主页面
+            elements.backToMain.addEventListener('click', showMainPage);
+            
+            // 关闭成功提示
+            elements.closeSuccess.addEventListener('click', () => {
+                elements.successModal.classList.remove('active');
+                // 在移动设备上返回主页面
+                if (window.innerWidth < 768) {
+                    showMainPage();
+                }
+            });
+            
+            // 导出按钮
+            elements.exportBtn.addEventListener('click', exportToExcel);
+            
+            // 重置按钮
+            elements.resetBtn.addEventListener('click', resetAllData);
+        }
         
-        // 添加工作表
-        const wsData = [['姓名', '部门', '状态']];
-        
-        dataStore.allPersons.forEach(person => {
-            const isChecked = dataStore.checkedPersons.includes(person.name);
-            wsData.push([
-                person.name,
-                person.department,
-                isChecked ? '已签到' : '未签到'
-            ]);
-        });
-        
-        const ws = XLSX.utils.aoa_to_sheet(wsData);
-        XLSX.utils.book_append_sheet(wb, ws, '签到统计');
-        
-        // 导出Excel
-        XLSX.writeFile(wb, '签到统计.xlsx');
-        showToast('导出成功', 'success');
-    });
-    
-    // GitHub设置
-    elements.setupGithub.addEventListener('click', showGithubModal);
-    elements.saveToken.addEventListener('click', setupGithubToken);
-    elements.cancelToken.addEventListener('click', hideGithubModal);
-}
-
         // 初始化应用
-async function initApp() {
-    await dataStore.init();
-    setupEventListeners();
-    updateUI();
-    startAutoRefresh();
-    
-    // 立即生成二维码
-    generateQRCode();
-    checkCheckinMode();
-}
-
-// 启动应用
-document.addEventListener('DOMContentLoaded', initApp);
-
+        async function initApp() {
+            await dataStore.init();
+            setupEventListeners();
+            updateUI();
+            startAutoRefresh();
+            
+            // 立即生成二维码
+            generateQRCode();
+            checkCheckinMode();
+        }
+        
+        // 启动应用
+        document.addEventListener('DOMContentLoaded', initApp);
     </script>
 </body>
 </html>
