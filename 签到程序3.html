@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>智能二维码签到系统 - 移动端优化版</title>
+    <title>智能二维码签到系统</title>
     <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.1/build/qrcode.min.js"></script>
@@ -298,23 +298,6 @@
             </h3>
             <p class="text-blue-700">本系统使用GitHub API实现数据存储和同步，确保手机和电脑数据实时同步。</p>
             <p class="text-blue-700">首次使用需要<a href="javascript:void(0)" id="setup-github" class="font-bold underline">设置GitHub访问令牌</a>。</p>
-        </div>
-        
-        <!-- 部署指南 -->
-        <div class="deploy-warning mb-6">
-            <h3 class="font-bold text-lg text-yellow-800 mb-2 flex items-center">
-                <i class="fas fa-exclamation-triangle mr-2"></i>部署指南
-            </h3>
-            <p class="text-yellow-700">手机扫描二维码出现问题的原因：</p>
-            <p class="text-yellow-700 mb-3">手机无法直接访问电脑上的本地文件路径，需要将系统部署到Web服务器</p>
-            
-            <p class="font-medium">解决方案：</p>
-            <ol class="deploy-steps text-yellow-700">
-                <li>将本HTML文件上传到Web服务器（如Apache、Nginx等）</li>
-                <li>使用内网穿透工具（如ngrok）将本地服务暴露到公网</li>
-                <li>在局域网内测试时，使用电脑的IP地址访问（如http://192.168.x.x）</li>
-                <li>使用云服务（如GitHub Pages、Vercel）部署静态页面</li>
-            </ol>
         </div>
         
         <!-- 主要内容区域 -->
@@ -1468,4 +1451,5 @@
     </script>
 </body>
 </html>
+
 
