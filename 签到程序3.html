@@ -9,7 +9,10 @@
     <script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.1/build/qrcode.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    
+   
+<button id="reset-btn" class="btn-primary bg-red-500 hover:bg-red-600 ml-3 text-sm">
+    <i class="fas fa-trash-alt mr-1"></i>重置
+</button>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
         
@@ -831,25 +834,25 @@
                 return true;
             },
             
-            updateUnchecked() {
-                this.uncheckedPersons = this.allPersons.filter(
-                    person => !this.checkedPersons.includes(person.name)
-                );
-                
-                // 初始化部门极速生成二维码统计
-                this.departments = {};
-                this.allPersons.forEach(person => {
-                    const dept = person.department || '未指定';
-                    if (!this.departments[dept]) {
-                        this.departments[dept极速生成二维码] = { total: 0, checked: 0 };
-                    }
-                    this.departments[dept].total += 1;
-                    
-                    if (this.checkedPersons.includes(person.name)) {
-                        this.departments[dept].checked += 1;
-                    }
-                });
-            },
+           updateUnchecked() {
+    this.uncheckedPersons = this.allPersons.filter(
+        person => !this.checkedPersons.includes(person.name)
+    );
+    
+    // 初始化部门统计
+    this.departments = {};
+    this.allPersons.forEach(person => {
+        const dept = person.department || '未指定';
+        if (!this.departments[dept]) {
+            this.departments[dept] = { total: 0, checked: 0 };
+        }
+        this.departments[dept].total += 1;
+        
+        if (this.checkedPersons.includes(person.name)) {
+            this.departments[dept].checked += 1;
+        }
+    });
+},
             
             getStats() {
                 return {
@@ -1010,13 +1013,102 @@
                 updateStatus('签到表单已打开');
             }
         }
+		
+		// 1. 动态生成部门选项
+function updateDepartmentOptions() {
+    const departmentSelect = document.getElementById('department');
+    
+    // 清空现有选项（保留第一个提示选项）
+    while (departmentSelect.options.length > 1) {
+        departmentSelect.remove(1);
+    }
+    
+    // 从数据中获取所有部门
+    const departments = new Set();
+    dataStore.allPersons.forEach(person => {
+        if (person.department) {
+            departments.add(person.department);
+        }
+    });
+    
+    // 如果有部门数据，使用实际部门
+    if (departments.size > 0) {
+        departments.forEach(dept => {
+            const option = document.createElement('option');
+            option.value = dept;
+            option.textContent = dept;
+            departmentSelect.appendChild(option);
+        });
+    } else {
+        // 否则使用默认部门选项
+        const defaultDepts = ['技术部', '市场部', '销售部', '人力资源', '财务部', '行政部'];
+        defaultDepts.forEach(dept => {
+            const option = document.createElement('option');
+            option.value = dept;
+            option.textContent = dept;
+            departmentSelect.appendChild(option);
+        });
+    }
+}
+
+// 2. 重置功能
+function resetAllData() {
+    if (confirm('确定要重置所有数据吗？这将清空所有签到记录和人员名单。')) {
+        dataStore.allPersons = [];
+        dataStore.checkedPersons = [];
+        dataStore.uncheckedPersons = [];
+        dataStore.departments = {};
+        dataStore.checkinTimes = [];
         
-        // 处理Excel文件上传
+        // 清除本地存储
+        localStorage.removeItem('checkinData');
+        
+        // 保存到云端
+        dataStore.save();
+        
+        // 更新UI
+        updateUI();
+        showToast('所有数据已重置', 'success');
+    }
+}
+function findNameColumn(jsonData) {
+    if (!jsonData || jsonData.length === 0) return null;
+    
+    const firstRow = jsonData[0];
+    const possibleColumns = Object.keys(firstRow);
+    
+    // 查找包含"姓名"的列（不区分大小写）
+    for (const column of possibleColumns) {
+        if (column.includes('姓名') || column.toLowerCase().includes('name')) {
+            return column;
+        }
+    }
+    
+    // 如果没有找到，尝试使用第一列
+    return possibleColumns[0] || null;
+}
+
+function findDeptColumn(jsonData) {
+    if (!jsonData || jsonData.length === 0) return null;
+    
+    const firstRow = jsonData[0];
+    const possibleColumns = Object.keys(firstRow);
+    
+    // 查找包含"部门"的列（不区分大小写）
+    for (const column of possibleColumns) {
+        if (column.includes('部门') || column.toLowerCase().includes('department')) {
+            return column;
+        }
+    }
+    
+    return null;
+}
+        
+       // 3. 增强的Excel处理
 function handleExcelUpload(e) {
     const file = e.target.files[0];
     if (!file) return;
     
-    // 显示文件名
     elements.fileName.textContent = file.name;
     
     const reader = new FileReader();
@@ -1029,21 +1121,18 @@ function handleExcelUpload(e) {
             const worksheet = workbook.Sheets[firstSheetName];
             const jsonData = XLSX.utils.sheet_to_json(worksheet);
             
-            // 提取姓名列 (支持"姓名"或"name"等不同列名)
             const nameColumn = findNameColumn(jsonData);
             if (!nameColumn) {
                 showToast('Excel文件中未找到包含"姓名"的列', 'error');
-                updateStatus('Excel格式错误');
                 return;
             }
             
-            // 提取部门列
             const deptColumn = findDeptColumn(jsonData);
             
             const persons = [];
             jsonData.forEach(row => {
                 const name = row[nameColumn]?.toString().trim();
-                const department = deptColumn ? row[deptColumn]?.toString().trim() : '未指定';
+                const department = deptColumn ? row[deptColumn]?.toString().trim() : '';
                 
                 if (name) {
                     persons.push({ name, department });
@@ -1051,63 +1140,27 @@ function handleExcelUpload(e) {
             });
             
             if (persons.length === 0) {
-                showToast('未从Excel文件中提取到有效姓名数据', 'error'); // 修正此处的乱码字符
-                updateStatus('Excel数据为空');
+                showToast('未从Excel文件中提取到有效姓名数据', 'error');
                 return;
             }
             
-            // 更新数据并刷新界面
+            // 更新数据
             dataStore.setAllPersons(persons);
+            
+            // 更新部门选项
+            updateDepartmentOptions();
+            
+            // 更新UI
             updateUI();
             showToast(`成功导入 ${persons.length} 名人员信息`, 'success');
-            updateStatus('名单导入成功');
+            
         } catch (error) {
             console.error('解析Excel文件失败:', error);
             showToast('解析Excel文件失败，请确保文件格式正确', 'error');
-            updateStatus('Excel解析失败');
         }
     };
     reader.readAsArrayBuffer(file);
 }
-
-        
-        // 查找包含姓名的列
-        // 查找包含姓名的列
-function findNameColumn(jsonData) {
-    if (!jsonData || jsonData.length === 0) return null;
-    
-    const firstRow = jsonData[0];
-    const possibleColumns = Object.keys(firstRow);
-    
-    // 查找包含"姓名"的列
-    for (const column of possibleColumns) {
-        if (column.includes('姓名') || column.toLowerCase().includes('name')) {
-            return column;
-        }
-    }
-    
-    return possibleColumns[0] || null;
-}
-
-// 查找包含部门的列
-function findDeptColumn(jsonData) {
-    if (!jsonData || jsonData.length === 0) return null;
-    
-    const firstRow = jsonData[0];
-    const possibleColumns = Object.keys(firstRow);
-    
-    // 查找包含"部门"的列
-    for (const column of possibleColumns) {
-        if (column.includes('部门') || column.toLowerCase().includes('department')) {
-            return column;
-        }
-    }
-    
-    return null;
-}
-
-        
-        // 更新UI显示
         // 更新UI显示
 function updateUI() {
     const stats = dataStore.getStats();
@@ -1531,7 +1584,8 @@ function setupEventListeners() {
             showMainPage();
         }
     });
-    
+    // 5. 添加重置按钮事件监听
+document.getElementById('reset-btn').addEventListener('click', resetAllData);
     // 导出按钮
     document.getElementById('export-btn').addEventListener('click', () => {
         if (dataStore.uncheckedPersons.length === 0) {
