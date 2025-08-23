@@ -572,16 +572,9 @@
                 
                 // 如果有GitHub令牌，保存到Gist
                 if (this.githubToken) {
-                    try {
-                        updateStatus('正在同步到云端...');
-                        await this.saveToGist();
-                        updateStatus('数据已同步到云端');
-                        updateGithubStatus(true);
-                    } catch (error) {
-                        console.error('保存到Gist失败:', error);
-                        updateStatus('云端同步失败');
-                        updateGithubStatus(false);
-                    }
+                    await this.saveToGist();
+				await this.loadFromGist(); // 立即从Gist重新加载
+				updateUI(); // 更新界面
                 }
             },
             
@@ -809,7 +802,7 @@
             if (syncInterval) clearInterval(syncInterval);
             
             // 每15秒检查一次更新
-            syncInterval = setInterval(checkForUpdates, 15000);
+            syncInterval = setInterval(checkForUpdates, 5000);
             
             // 立即检查一次
             checkForUpdates();
