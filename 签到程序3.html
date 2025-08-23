@@ -591,30 +591,41 @@
             },
             
             // 保存数据到Gist和本地存储
-            async save() {
-                // 保存到本地存储
-                localStorage.setItem('checkinData', JSON.stringify({
-                    allPersons: this.allPersons,
-                    checkedPersons: this.checkedPersons,
-                    uncheckedPersons: this.uncheckedPersons,
-                    departments: this.departments,
-                    checkinTimes: this.checkinTimes
-                }));
-                
-                // 如果有GitHub令牌，保存到Gist
-                if (this.githubToken) {
-                    try {
-                        updateStatus('正在同步到云端...');
-                        await this.saveToGist();
-                        updateStatus('数据已同步到云端');
-                        updateGithubStatus(true);
-                    } catch (error) {
-                        console.error('保存到Gist失败:', error);
-                        updateStatus('云端同步失败');
-                        updateGithubStatus(false);
+            // 修改dataStore对象中的save方法
+async save() {
+    // 保存到本地存储
+    localStorage.setItem('checkinData', JSON.stringify({
+        allPersons: this.allPersons,
+        checkedPersons: this.checkedPersons,
+        uncheckedPersons: this.uncheckedPersons,
+        departments: this.departments,
+        checkinTimes: this.checkinTimes
+    }));
+    
+    // 如果有GitHub令牌，保存到Gist
+    if (this.githubToken) {
+        try {
+            updateStatus('正在同步到云端...');
+            await this.saveToGist();
+            updateStatus('数据已同步到云端');
+            updateGithubStatus(true);
+            
+            // 通知其他设备数据已更新
+            if (typeof EventSource !== 'undefined') {
+                const eventSource = new EventSource(`https://api.github.com/gists/${this.gistId}/events`);
+                eventSource.onmessage = function(event) {
+                    if (event.data === 'update') {
+                        refreshData();
                     }
-                }
-            },
+                };
+            }
+        } catch (error) {
+            console.error('保存到Gist失败:', error);
+            updateStatus('云端同步失败');
+            updateGithubStatus(false);
+        }
+    }
+}
             
             // 从Gist加载数据
             async loadFromGist() {
@@ -1284,7 +1295,13 @@
         // 3秒后自动关闭成功提示并返回主界面
         setTimeout(() => {
             elements.successModal.classList.remove('active');
-            showMainPage();
+            // 如果是移动设备，关闭签到表单
+            if (window.innerWidth < 768) {
+                showMainPage();
+            }
+            
+            // 强制刷新数据以确保同步
+            refreshData();
         }, 3000);
     } else {
         showToast('签到失败，请稍后重试', 'error');
@@ -1372,67 +1389,84 @@
         let refreshCountdown = 5;
         let refreshInterval = null;
         
-        function startAutoRefresh() {
+        // 修改startAutoRefresh函数
+function startAutoRefresh() {
+    // 重置倒计时
+    refreshCountdown = 5;
+    elements.countdown.textContent = refreshCountdown;
+    
+    // 清除现有定时器
+    if (refreshInterval) clearInterval(refreshInterval);
+    
+    // 设置新定时器
+    refreshInterval = setInterval(() => {
+        refreshCountdown--;
+        elements.countdown.textContent = refreshCountdown;
+        
+        if (refreshCountdown <= 0) {
+            // 刷新数据
+            refreshData();
             // 重置倒计时
             refreshCountdown = 5;
             elements.countdown.textContent = refreshCountdown;
-            
-            // 清除现有定时器
-            if (refreshInterval) clearInterval(refreshInterval);
-            
-            // 设置新定时器
-            refreshInterval = setInterval(() => {
-                refreshCountdown--;
-                elements.countdown.textContent = refreshCountdown;
-                
-                if (refreshCountdown <= 0) {
-                    // 刷新数据
-                    refreshData();
-                    // 重置倒计时
-                    refreshCountdown = 5;
-                    elements.countdown.textContent = refreshCountdown;
-                }
-            }, 1000);
         }
+    }, 1000);
+    
+    // 如果是移动设备，缩短刷新间隔
+    if (window.innerWidth < 768) {
+        if (refreshInterval) clearInterval(refreshInterval);
+        refreshInterval = setInterval(refreshData, 3000); // 每3秒刷新一次
+    }
+}
         
         // 刷新数据
-        function refreshData() {
-            updateStatus('自动刷新数据中...');
-            
-            // 从云端重新加载数据
-            if (dataStore.githubToken) {
-                dataStore.loadFromGist().then(data => {
-                    if (data) {
-                        dataStore.allPersons = data.allPersons || [];
-                        dataStore.checkedPersons = data.checkedPersons || [];
-                        dataStore.uncheckedPersons = data.uncheckedPersons || [];
-                        dataStore.departments = data.departments || {};
-                        dataStore.checkinTimes = data.checkinTimes || [];
-                        
-                        updateUI();
-                        updateStatus('数据已自动刷新');
-                    }
-                }).catch(error => {
-                    console.error('刷新数据失败:', error);
-                    updateStatus('自动刷新失败');
-                });
-            } else {
-                // 从本地存储重新加载数据
-                const savedData = localStorage.getItem('checkinData');
-                if (savedData) {
-                    const data = JSON.parse(savedData);
-                    dataStore.allPersons = data.allPersons || [];
-                    dataStore.checkedPersons = data.checkedPersons || [];
-                    dataStore.uncheckedPersons = data.uncheckedPersons || [];
-                    dataStore.departments = data.departments || {};
-                    dataStore.checkinTimes = data.checkinTimes || [];
-                    
-                    updateUI();
-                    updateStatus('数据已自动刷新');
-                }
+       // 修改refreshData函数
+function refreshData() {
+    updateStatus('自动刷新数据中...');
+    
+    // 从云端重新加载数据
+    if (dataStore.githubToken && dataStore.gistId) {
+        fetch(`https://api.github.com/gists/${dataStore.gistId}`, {
+            headers: {
+                'Accept': 'application/vnd.github.v3+json'
             }
+        })
+        .then(response => response.json())
+        .then(gist => {
+            if (gist.files && gist.files[GIST_CONFIG.filename]) {
+                const content = gist.files[GIST_CONFIG.filename].content;
+                const data = JSON.parse(content);
+                
+                dataStore.allPersons = data.allPersons || [];
+                dataStore.checkedPersons = data.checkedPersons || [];
+                dataStore.uncheckedPersons = data.uncheckedPersons || [];
+                dataStore.departments = data.departments || {};
+                dataStore.checkinTimes = data.checkinTimes || [];
+                
+                updateUI();
+                updateStatus('数据已自动刷新');
+            }
+        })
+        .catch(error => {
+            console.error('刷新数据失败:', error);
+            updateStatus('自动刷新失败');
+        });
+    } else {
+        // 从本地存储重新加载数据
+        const savedData = localStorage.getItem('checkinData');
+        if (savedData) {
+            const data = JSON.parse(savedData);
+            dataStore.allPersons = data.allPersons || [];
+            dataStore.checkedPersons = data.checkedPersons || [];
+            dataStore.uncheckedPersons = data.uncheckedPersons || [];
+            dataStore.departments = data.departments || {};
+            dataStore.checkinTimes = data.checkinTimes || [];
+            
+            updateUI();
+            updateStatus('数据已自动刷新');
         }
-        
+    }
+}
         // 导出数据为Excel
         function exportToExcel() {
             if (dataStore.uncheckedPersons.length === 0) {
@@ -1499,17 +1533,36 @@
             elements.resetBtn.addEventListener('click', resetAllData);
         }
         
-        // 初始化应用
-        async function initApp() {
-            await dataStore.init();
-            setupEventListeners();
-            updateUI();
-            startAutoRefresh();
-            
-            // 立即生成二维码
-            generateQRCode();
-            checkCheckinMode();
+       // 在initApp函数中添加
+async function initApp() {
+    await dataStore.init();
+    setupEventListeners();
+    updateUI();
+    startAutoRefresh();
+    
+    // 设置WebSocket连接
+    if (dataStore.githubToken && dataStore.gistId) {
+        setupWebSocket();
+    }
+    
+    // 立即生成二维码
+    generateQRCode();
+    checkCheckinMode();
+}
+
+function setupWebSocket() {
+    const socket = new WebSocket(`wss://api.github.com/gists/${dataStore.gistId}/events`);
+    
+    socket.onmessage = function(event) {
+        if (event.data === 'update') {
+            refreshData();
         }
+    };
+    
+    socket.onclose = function() {
+        setTimeout(setupWebSocket, 5000); // 5秒后重连
+    };
+}
         
         // 启动应用
         document.addEventListener('DOMContentLoaded', initApp);
