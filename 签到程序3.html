@@ -9,6 +9,9 @@
     <script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.1/build/qrcode.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- 1. 引入Firebase SDK（关键：添加云端数据库支持） -->
+    <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js"></script>
     
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
@@ -264,21 +267,6 @@
             text-align: center;
             display: none;
         }
-        
-        .qr-manual-link {
-            background: #dbeafe;
-            border-radius: 8px;
-            padding: 12px;
-            margin-top: 16px;
-            text-align: center;
-            display: none;
-        }
-        
-        .qr-manual-link a {
-            word-break: break-all;
-            color: #2563eb;
-            font-weight: 500;
-        }
     </style>
 </head>
 <body class="min-h-screen">
@@ -339,14 +327,6 @@
                             <p class="font-medium">检测到本地文件访问</p>
                             <p class="text-sm">手机无法访问电脑上的本地文件路径</p>
                             <p class="text-sm mt-2">请按照上方部署指南操作</p>
-                        </div>
-                        
-                        <!-- 手动链接 -->
-                        <div id="qr-manual-link" class="qr-manual-link">
-                            <p class="text-sm text-gray-700 mb-2">
-                                <i class="fas fa-link mr-1"></i>如果无法扫描二维码，请复制下方链接：
-                            </p>
-                            <a id="manual-link" href="#" class="text-sm"></a>
                         </div>
                         
                         <p class="text-gray-600 text-center mb-4">使用手机扫描二维码进行签到</p>
@@ -527,7 +507,23 @@
     </div>
 
     <script>
-        // 数据存储
+        // 2. 初始化Firebase（请替换为您自己的Firebase配置！）
+        const firebaseConfig = {
+            apiKey: "AIzaSyD0X7Z1aF7Z1aF7Z1aF7Z1aF7Z1aF7Z1aF7", // 替换为您的apiKey
+            authDomain: "your-project-id.firebaseapp.com", // 替换为您的authDomain
+            databaseURL: "https://your-project-id-default-rtdb.firebaseio.com", // 替换为您的databaseURL
+            projectId: "your-project-id", // 替换为您的projectId
+            storageBucket: "your-project-id.appspot.com", // 替换为您的storageBucket
+            messagingSenderId: "1234567890", // 替换为您的messagingSenderId
+            appId: "1:1234567890:web:abc123def456ghi789" // 替换为您的appId
+        };
+
+        // 初始化Firebase
+        const app = firebase.initializeApp(firebaseConfig);
+        const db = firebase.database(); // 获取实时数据库引用
+        const checkinRef = db.ref('checkinSystem'); // 签到系统的根节点（可自定义）
+
+        // 3. 云端数据存储（替换原localStorage逻辑）
         const dataStore = {
             allPersons: [],
             checkedPersons: [],
@@ -535,35 +531,52 @@
             departments: {},
             checkinTimes: [],
             
-            init() {
-                const savedData = localStorage.getItem('checkinData');
-                if (savedData) {
-                    const data = JSON.parse(savedData);
-                    this.allPersons = data.allPersons || [];
-                    this.checkedPersons = data.checkedPersons || [];
-                    this.uncheckedPersons = data.uncheckedPersons || [];
-                    this.departments = data.departments || {};
-                    this.checkinTimes = data.checkinTimes || [];
+            // 初始化：从云端加载数据
+            async init() {
+                try {
+                    updateStatus('同步云端数据...');
+                    // 监听云端数据变化（实时同步）
+                    checkinRef.on('value', (snapshot) => {
+                        const cloudData = snapshot.val() || {};
+                        // 更新本地缓存
+                        this.allPersons = cloudData.allPersons || [];
+                        this.checkedPersons = cloudData.checkedPersons || [];
+                        this.checkinTimes = cloudData.checkinTimes || [];
+                        this.updateUnchecked(); // 重新计算未到人员
+                        updateUI(); // 刷新界面
+                        updateStatus('已同步云端数据');
+                    });
+                } catch (error) {
+                    console.error('初始化数据失败:', error);
+                    updateStatus('数据同步失败');
+                    showToast('数据同步失败，请检查网络', 'error');
                 }
             },
             
-            save() {
-                localStorage.setItem('checkinData', JSON.stringify({
-                    allPersons: this.allPersons,
-                    checkedPersons: this.checkedPersons,
-                    uncheckedPersons: this.uncheckedPersons,
-                    departments: this.departments,
-                    checkinTimes: this.checkinTimes
-                }));
+            // 保存数据到云端（所有设备共享）
+            async save() {
+                try {
+                    await checkinRef.set({
+                        allPersons: this.allPersons,
+                        checkedPersons: this.checkedPersons,
+                        checkinTimes: this.checkinTimes
+                    });
+                } catch (error) {
+                    console.error('保存数据失败:', error);
+                    showToast('数据保存失败，请重试', 'error');
+                }
             },
             
-            setAllPersons(persons) {
+            // 设置应到人员名单（Excel导入后调用）
+            async setAllPersons(persons) {
                 this.allPersons = persons;
                 this.updateUnchecked();
-                this.save();
+                await this.save(); // 保存到云端
+                return true;
             },
             
-            addCheckedPerson(name, department = '未指定') {
+            // 添加签到人员（手机端提交后调用）
+            async addCheckedPerson(name, department = '未指定') {
                 if (!this.checkedPersons.includes(name)) {
                     this.checkedPersons.push(name);
                     this.checkinTimes.push(new Date().toISOString());
@@ -575,12 +588,13 @@
                     this.departments[department].checked += 1;
                     
                     this.updateUnchecked();
-                    this.save();
+                    await this.save(); // 保存到云端（触发所有设备更新）
                     return true;
                 }
                 return false;
             },
             
+            // 计算未到人员
             updateUnchecked() {
                 this.uncheckedPersons = this.allPersons.filter(
                     person => !this.checkedPersons.includes(person.name)
@@ -601,6 +615,7 @@
                 });
             },
             
+            // 获取统计数据
             getStats() {
                 return {
                     total: this.allPersons.length,
@@ -633,9 +648,7 @@
             timeChart: document.getElementById('time-chart'),
             recentCheckins: document.getElementById('recent-checkins'),
             statusText: document.getElementById('status-text'),
-            fileWarning: document.getElementById('file-warning'),
-            manualLink: document.getElementById('manual-link'),
-            qrManualLink: document.getElementById('qr-manual-link')
+            fileWarning: document.getElementById('file-warning')
         };
         
         // 更新状态信息
@@ -645,7 +658,7 @@
             }
         }
         
-        // 生成二维码（优化版）
+        // 生成二维码（修复版）
         function generateQRCode() {
             try {
                 updateStatus('生成二维码中...');
@@ -671,25 +684,20 @@
                     elements.fileWarning.style.display = 'none';
                 }
                 
-                // 生成动态URL - 使用当前URL
+                // 生成动态URL - 使用当前URL（GitHub Pages地址）
                 const currentUrl = new URL(window.location.href);
                 currentUrl.searchParams.set('checkin', 'true');
                 const checkinUrl = currentUrl.toString();
                 
-                // 显示手动链接
-                elements.manualLink.textContent = checkinUrl;
-                elements.manualLink.href = checkinUrl;
-                elements.qrManualLink.style.display = 'block';
-                
-                // 生成二维码（优化兼容性）
+                // 生成二维码（高容错率）
                 QRCode.toCanvas(canvas, checkinUrl, {
                     width: 256,
-                    margin: 2,
+                    margin: 1,
                     color: {
                         dark: '#1F2937',
                         light: '#ffffff'
                     },
-                    errorCorrectionLevel: 'H' // 高容错率
+                    errorCorrectionLevel: 'H' // 最高容错率（30%），确保扫描成功率
                 }, function (error) {
                     if (error) {
                         console.error('生成二维码失败:', error);
@@ -707,12 +715,6 @@
                     } else {
                         console.log('二维码生成成功:', checkinUrl);
                         updateStatus(isLocalFile ? '本地环境，手机无法访问' : '等待手机扫描');
-                        
-                        // 添加二维码成功提示
-                        const successMsg = document.createElement('div');
-                        successMsg.className = 'text-green-600 text-sm mt-2 text-center';
-                        successMsg.innerHTML = '<i class="fas fa-check-circle mr-1"></i>二维码已生成';
-                        qrcodeElement.parentNode.appendChild(successMsg);
                     }
                 });
             } catch (error) {
@@ -744,7 +746,7 @@
         }
         
         // 处理Excel文件上传
-        function handleExcelUpload(e) {
+        async function handleExcelUpload(e) {
             const file = e.target.files[0];
             if (!file) return;
             
@@ -752,7 +754,7 @@
             elements.fileName.textContent = file.name;
             
             const reader = new FileReader();
-            reader.onload = function(e) {
+            reader.onload = async function(e) {
                 try {
                     updateStatus('解析Excel中...');
                     const data = new Uint8Array(e.target.result);
@@ -788,10 +790,10 @@
                         return;
                     }
                     
-                    // 更新数据并刷新界面
-                    dataStore.setAllPersons(persons);
+                    // 更新数据并刷新界面（保存到云端）
+                    await dataStore.setAllPersons(persons);
                     updateUI();
-                    showToast(`成功导入 ${persons.length} 名人员信息`, 'success');
+                    showToast(`成功导入 ${persons.length} 名人员信息（已同步到云端）`, 'success');
                     updateStatus('名单导入成功');
                 } catch (error) {
                     console.error('解析Excel文件失败:', error);
@@ -898,7 +900,6 @@
             
             // 更新最近签到记录
             updateRecentCheckins();
-            updateStatus('数据已更新');
         }
         
         // 更新部门统计图表
@@ -1031,15 +1032,17 @@
                 return;
             }
             
-            // 显示最近10条签到记录
+            // 显示最近10条签到记录（按时间倒序）
             const recentPersons = dataStore.checkedPersons.slice(-10).reverse();
+            const recentTimes = dataStore.checkinTimes.slice(-10).reverse();
             
-            recentPersons.forEach(name => {
+            recentPersons.forEach((name, index) => {
                 const person = dataStore.allPersons.find(p => p.name === name) || { name, department: '未指定' };
-                const time = new Date().toLocaleTimeString();
+                const time = new Date(recentTimes[index]).toLocaleString(); // 显示本地时间
                 
                 const card = document.createElement('div');
-                card.className = 'bg-white rounded-lg p-4 shadow-sm border border-gray-100';
+                card.className = 'bg-white rounded-lg p-4 shadow-sm border border-gray-100 fade-in';
+                card.style.animationDelay = `${index * 0.1}s`; // 依次出现动画
                 card.innerHTML = `
                     <div class="flex justify-between items-start">
                         <div>
@@ -1054,8 +1057,8 @@
             });
         }
         
-        // 处理签到表单提交
-        function handleCheckinSubmit(e) {
+        // 处理签到表单提交（手机端）
+        async function handleCheckinSubmit(e) {
             e.preventDefault();
             const name = document.getElementById('name').value.trim();
             const department = document.getElementById('department').value || '未指定';
@@ -1080,12 +1083,15 @@
                 return;
             }
             
-            // 处理签到
-            const success = dataStore.addCheckedPerson(name, department);
+            // 处理签到（保存到云端）
+            updateStatus('提交签到信息...');
+            const success = await dataStore.addCheckedPerson(name, department);
             if (success) {
                 showSuccessModal(name);
                 updateUI();
                 updateStatus('签到成功');
+                // 清空表单
+                document.getElementById('checkin-form').reset();
             } else {
                 showToast('签到失败，请稍后重试', 'error');
                 updateStatus('签到失败');
@@ -1166,39 +1172,44 @@
             
             // 导出按钮
             document.getElementById('export-btn').addEventListener('click', () => {
-                if (dataStore.uncheckedPersons.length === 0) {
-                    showToast('没有未到人员可导出', 'info');
+                if (dataStore.uncheckedPersons.length === 0 && dataStore.allPersons.length === 0) {
+                    showToast('没有数据可导出', 'info');
                     return;
                 }
                 
                 // 创建工作簿
                 const wb = XLSX.utils.book_new();
                 
-                // 添加工作表
-                const wsData = [['姓名', '部门', '状态']];
+                // 添加工作表（包含所有人员签到状态）
+                const wsData = [['姓名', '部门', '签到状态', '签到时间（如有）']];
                 
                 dataStore.allPersons.forEach(person => {
                     const isChecked = dataStore.checkedPersons.includes(person.name);
+                    const checkinIndex = dataStore.checkedPersons.indexOf(person.name);
+                    const checkinTime = isChecked ? new Date(dataStore.checkinTimes[checkinIndex]).toLocaleString() : '-';
+                    
                     wsData.push([
                         person.name,
                         person.department,
-                        isChecked ? '已签到' : '未签到'
+                        isChecked ? '已签到' : '未签到',
+                        checkinTime
                     ]);
                 });
                 
                 const ws = XLSX.utils.aoa_to_sheet(wsData);
                 XLSX.utils.book_append_sheet(wb, ws, '签到统计');
                 
-                // 导出Excel
-                XLSX.writeFile(wb, '签到统计.xlsx');
+                // 导出Excel（文件名包含当前时间）
+                const fileName = `签到统计_${new Date().toLocaleDateString()}.xlsx`;
+                XLSX.writeFile(wb, fileName);
                 showToast('导出成功', 'success');
             });
         }
         
         // 初始化应用
-        function initApp() {
-            dataStore.init();
+        async function initApp() {
             setupEventListeners();
+            await dataStore.init(); // 从云端加载数据（关键：替换原localStorage初始化）
             updateUI();
             
             // 在DOM完全加载后生成二维码
@@ -1212,4 +1223,5 @@
         document.addEventListener('DOMContentLoaded', initApp);
     </script>
 </body>
+
 </html>
