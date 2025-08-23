@@ -11,9 +11,7 @@
     <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
-        /* 样式部分保持不变 */
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
-
+        /* 优化样式 */
         :root {
             --primary: #3B82F6;
             --primary-dark: #2563EB;
@@ -287,6 +285,69 @@
             background: #FEE2E2;
             color: #B91C1C;
         }
+
+        /* 新增样式 */
+        .wechat-browser-warning {
+            background: #FFF3CD;
+            border: 1px solid #FFEAA7;
+            border-radius: 8px;
+            padding: 12px;
+            margin: 16px 0;
+            font-size: 14px;
+            color: #856404;
+        }
+
+        .auto-close-timer {
+            display: inline-block;
+            background: #E9ECEF;
+            color: #495057;
+            border-radius: 50%;
+            width: 24px;
+            height: 24px;
+            line-height: 24px;
+            text-align: center;
+            margin-left: 8px;
+            font-size: 12px;
+        }
+
+        .connection-status {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 8px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            margin-top: 10px;
+        }
+
+        .connection-status.connected {
+            background: #D1FAE5;
+            color: #065F46;
+        }
+
+        .connection-status.disconnected {
+            background: #FEE2E2;
+            color: #B91C1C;
+        }
+
+        .real-time-badge {
+            background: #10B981;
+            color: white;
+            padding: 4px 8px;
+            border-radius: 12px;
+            font-size: 12px;
+            margin-left: 8px;
+            display: inline-flex;
+            align-items: center;
+        }
+
+        .github-setup-panel {
+            background: #F8F9FA;
+            border-radius: 12px;
+            padding: 16px;
+            margin-top: 16px;
+            border-left: 4px solid #3B82F6;
+        }
     </style>
 </head>
 
@@ -320,6 +381,9 @@
                 <div class="card h-full flex flex-col p-6">
                     <h2 class="text-xl font-semibold mb-6 flex items-center">
                         <i class="fas fa-qrcode text-blue-500 mr-2"></i>签到二维码
+                        <span class="real-time-badge ml-2">
+                            <i class="fas fa-broadcast-tower mr-1"></i>实时同步
+                        </span>
                     </h2>
                     <div class="flex-1 flex flex-col items-center justify-center mb-4">
                         <div id="qrcode-container"
@@ -373,6 +437,28 @@
                                 <span id="file-name" class="ml-3 text-gray-600 truncate max-w-[140px]"></span>
                             </div>
                             <p class="text-xs text-gray-500 mt-2">支持.xlsx或.xls格式，需包含"姓名"列</p>
+                        </div>
+                    </div>
+
+                    <!-- GitHub 数据同步设置 -->
+                    <div class="github-setup-panel mt-4">
+                        <h3 class="font-medium text-gray-700 mb-2 flex items-center">
+                            <i class="fab fa-github mr-2"></i>云端数据同步
+                        </h3>
+                        <div id="github-setup">
+                            <p class="text-sm text-gray-600 mb-3">启用GitHub Gist同步以实现多设备数据实时同步</p>
+                            <button id="setup-github" class="btn-primary w-full text-sm">
+                                <i class="fas fa-cloud-upload-alt mr-1"></i>设置GitHub同步
+                            </button>
+                        </div>
+                        <div id="github-connected" class="hidden">
+                            <p class="text-sm text-green-600 mb-2">
+                                <i class="fas fa-check-circle mr-1"></i>已启用云端同步
+                            </p>
+                            <div class="connection-status connected">
+                                <i class="fas fa-cloud mr-1"></i>
+                                <span>数据同步中</span>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -434,6 +520,9 @@
         <div class="card p-6 mt-6">
             <h2 class="text-xl font-semibold mb-4 flex items-center">
                 <i class="fas fa-history text-yellow-500 mr-2"></i>最近签到记录
+                <button id="refresh-data" class="btn-primary ml-4 text-sm">
+                    <i class="fas fa-sync-alt mr-1"></i>手动刷新
+                </button>
             </h2>
             <div id="recent-checkins" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                 <div class="text-center text-gray-500 py-10">
@@ -453,6 +542,12 @@
             </button>
             <h2 class="text-2xl font-bold text-gray-800 mb-2">会议签到</h2>
             <p class="text-gray-600">请填写您的信息完成签到</p>
+        </div>
+
+        <!-- 微信浏览器提示 -->
+        <div id="wechat-warning" class="wechat-browser-warning hidden">
+            <i class="fas fa-info-circle mr-1"></i>
+            <strong>微信用户提示：</strong>签到完成后请点击"完成"按钮返回
         </div>
 
         <form id="checkin-form" class="flex-1">
@@ -507,10 +602,46 @@
                 <i class="fas fa-check text-2xl text-green-500"></i>
             </div>
             <h3 class="text-xl font-bold mb-2">签到成功！</h3>
-            <p class="text-gray-600 mb-6" id="success-message">感谢您的参与</p>
+            <p class="text-gray-600 mb-4" id="success-message">感谢您的参与</p>
+            <div id="auto-close-countdown" class="text-sm text-gray-500 mb-4 hidden">
+                页面将在 <span class="auto-close-timer">5</span> 秒后自动关闭
+            </div>
             <button id="close-success" class="btn-primary w-full py-2">
                 完成
             </button>
+        </div>
+    </div>
+
+    <!-- GitHub Token 设置模态框 -->
+    <div id="github-modal" class="success-modal">
+        <div class="success-content">
+            <div class="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                <i class="fab fa-github text-2xl text-blue-500"></i>
+            </div>
+            <h3 class="text-xl font-bold mb-2">设置GitHub同步</h3>
+            <p class="text-gray-600 mb-4">请输入GitHub Personal Access Token以实现数据同步</p>
+            
+            <div class="mb-4">
+                <input type="password" id="github-token-input" 
+                    class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    placeholder="GitHub Personal Access Token">
+            </div>
+            
+            <p class="text-xs text-gray-500 mb-4">
+                <a href="https://docs.github.com/en/authentication/keeping-your-account-and-data-secure/creating-a-personal-access-token" 
+                   target="_blank" class="text-blue-500 hover:underline">
+                    如何获取Token?
+                </a>
+            </p>
+            
+            <div class="flex space-x-3">
+                <button id="cancel-github" class="btn-primary bg-gray-500 hover:bg-gray-600 flex-1">
+                    取消
+                </button>
+                <button id="save-github-token" class="btn-primary flex-1">
+                    保存
+                </button>
+            </div>
         </div>
     </div>
 
@@ -592,10 +723,18 @@
 
                 // 如果有GitHub令牌，保存到Gist
                 if (this.githubToken) {
-                    await this.saveToGist();
-                    await this.loadFromGist(); // 立即从Gist重新加载
-                    updateUI(); // 更新界面
+                    try {
+                        await this.saveToGist();
+                        updateGithubStatus(true);
+                    } catch (error) {
+                        console.error('保存到Gist失败:', error);
+                        updateGithubStatus(false);
+                        showToast('云端同步失败，数据仅保存在本地', 'error');
+                    }
                 }
+                
+                // 更新UI
+                updateUI();
             },
 
             // 从Gist加载数据
@@ -634,7 +773,6 @@
                     showToast('未连接GitHub账号，数据仅保存在本地', 'warning');
                     return;
                 }
-
 
                 const data = JSON.stringify({
                     allPersons: this.allPersons,
@@ -701,6 +839,8 @@
             setGithubToken(token) {
                 this.githubToken = token;
                 localStorage.setItem('githubToken', token);
+                updateGithubStatus(true);
+                this.save(); // 立即保存到云端
             },
 
             // 规范化姓名（去除空格、转换为统一大小写等）
@@ -822,7 +962,17 @@
             githubStatus: document.getElementById('github-status'),
             countdown: document.getElementById('countdown'),
             exportBtn: document.getElementById('export-btn'),
-            resetBtn: document.getElementById('reset-btn')
+            resetBtn: document.getElementById('reset-btn'),
+            refreshData: document.getElementById('refresh-data'),
+            wechatWarning: document.getElementById('wechat-warning'),
+            autoCloseCountdown: document.getElementById('auto-close-countdown'),
+            githubModal: document.getElementById('github-modal'),
+            githubTokenInput: document.getElementById('github-token-input'),
+            saveGithubToken: document.getElementById('save-github-token'),
+            cancelGithub: document.getElementById('cancel-github'),
+            githubSetup: document.getElementById('github-setup'),
+            githubConnected: document.getElementById('github-connected'),
+            setupGithub: document.getElementById('setup-github')
         };
 
         // 数据同步轮询
@@ -831,8 +981,8 @@
         function startDataSync() {
             if (syncInterval) clearInterval(syncInterval);
 
-            // 每3秒检查一次更新（GitHub API限制每小时60次请求，请谨慎调整）
-            syncInterval = setInterval(checkForUpdates, 3000);
+            // 每30秒检查一次更新（避免GitHub API限制）
+            syncInterval = setInterval(checkForUpdates, 30000);
             checkForUpdates();
         }
 
@@ -869,7 +1019,6 @@
                 }
             } catch (error) {
                 console.error('检查更新失败:', error);
-                showToast('云端同步失败', 'error');
             }
         }
 
@@ -886,9 +1035,15 @@
                 if (connected) {
                     elements.githubStatus.className = 'github-status connected';
                     elements.githubStatus.innerHTML = '<i class="fab fa-github"></i> 已连接';
+                    elements.githubSetup.classList.add('hidden');
+                    elements.githubConnected.classList.remove('hidden');
+                    startDataSync();
                 } else {
                     elements.githubStatus.className = 'github-status disconnected';
                     elements.githubStatus.innerHTML = '<i class="fab fa-github"></i> 未连接';
+                    elements.githubSetup.classList.remove('hidden');
+                    elements.githubConnected.classList.add('hidden');
+                    stopDataSync();
                 }
             }
         }
@@ -903,7 +1058,6 @@
                 // 生成包含返回参数的URL
                 const currentUrl = new URL(window.location.href);
                 currentUrl.searchParams.set('checkin', 'true');
-                currentUrl.searchParams.set('return', 'true'); // 添加返回标志
 
                 // 使用URL.createObjectURL生成可关闭的页面
                 const checkinUrl = currentUrl.toString();
@@ -945,6 +1099,11 @@
                 // 清除URL参数避免重复显示
                 history.replaceState({}, document.title, window.location.pathname);
                 updateStatus('签到表单已打开');
+                
+                // 检查是否为微信浏览器
+                if (/MicroMessenger/i.test(navigator.userAgent)) {
+                    elements.wechatWarning.classList.remove('hidden');
+                }
             }
         }
 
@@ -1235,10 +1394,11 @@
 
             // 显示最近10条签到记录
             const recentPersons = dataStore.checkedPersons.slice(-10).reverse();
+            const recentTimes = dataStore.checkinTimes.slice(-10).reverse();
 
-            recentPersons.forEach(name => {
+            recentPersons.forEach((name, index) => {
                 const person = dataStore.allPersons.find(p => p.name === name) || { name, department: '未指定' };
-                const time = new Date().toLocaleTimeString();
+                const time = new Date(recentTimes[index]).toLocaleTimeString();
 
                 const card = document.createElement('div');
                 card.className = 'bg-white rounded-lg p-4 shadow-sm border border-gray-100';
@@ -1272,12 +1432,32 @@
             if (success) {
                 showSuccessModal(name);
                 updateUI();
+            } else {
+                showToast('您已签到，请勿重复提交', 'error');
+            }
+        }
 
-                // 3秒后自动关闭页面（如果是通过扫码进入）
-                const urlParams = new URLSearchParams(window.location.search);
-                if (urlParams.has('return')) {
-                    setTimeout(() => {
-                        // 尝试关闭窗口（在移动浏览器中有效）
+        // 显示成功提示
+        function showSuccessModal(name) {
+            elements.successModal.classList.add('active');
+            
+            // 检查是否为微信浏览器
+            const isWechat = /MicroMessenger/i.test(navigator.userAgent);
+            const shouldReturn = new URLSearchParams(window.location.search).has('checkin');
+            
+            if (shouldReturn && !isWechat) {
+                // 非微信浏览器，显示倒计时并自动关闭
+                elements.autoCloseCountdown.classList.remove('hidden');
+                let countdown = 5;
+                const countdownElement = document.querySelector('.auto-close-timer');
+                countdownElement.textContent = countdown;
+                
+                const countdownInterval = setInterval(() => {
+                    countdown--;
+                    countdownElement.textContent = countdown;
+                    
+                    if (countdown <= 0) {
+                        clearInterval(countdownInterval);
                         try {
                             window.close();
                         } catch (e) {
@@ -1287,32 +1467,9 @@
                                 window.history.back();
                             }, 100);
                         }
-                    }, 3000);
-                }
-            } else {
-                showToast('签到失败，请稍后重试', 'error');
+                    }
+                }, 1000);
             }
-        }
-
-        // 显示成功提示
-        function showSuccessModal(name) {
-            const urlParams = new URLSearchParams(window.location.search);
-            const shouldReturn = urlParams.has('return');
-
-            const successContent = document.getElementById('success-content');
-            successContent.innerHTML = `
-        <div class="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
-            <i class="fas fa-check text-2xl text-green-500"></i>
-        </div>
-        <h3 class="text-xl font-bold mb-2">签到成功！</h3>
-        <p class="text-gray-600 mb-6">感谢您的参与</p>
-        ${shouldReturn ? '<p class="text-sm text-gray-500 mb-4">页面将在3秒后自动关闭</p>' : ''}
-        <button id="close-success" class="btn-primary w-full py-2">
-            ${shouldReturn ? '立即关闭' : '完成'}
-        </button>
-    `;
-
-            elements.successModal.classList.add('active');
 
             document.getElementById('close-success').onclick = function () {
                 elements.successModal.classList.remove('active');
@@ -1490,6 +1647,29 @@
             }
         }
 
+        // 显示GitHub Token设置模态框
+        function showGithubModal() {
+            elements.githubModal.classList.add('active');
+        }
+
+        // 隐藏GitHub Token设置模态框
+        function hideGithubModal() {
+            elements.githubModal.classList.remove('active');
+        }
+
+        // 保存GitHub Token
+        function saveGithubToken() {
+            const token = elements.githubTokenInput.value.trim();
+            if (!token) {
+                showToast('请输入GitHub Token', 'error');
+                return;
+            }
+            
+            dataStore.setGithubToken(token);
+            hideGithubModal();
+            showToast('GitHub Token已保存，开始同步数据', 'success');
+        }
+
         // 事件监听
         function setupEventListeners() {
             // Excel上传
@@ -1515,6 +1695,18 @@
 
             // 重置按钮
             elements.resetBtn.addEventListener('click', resetAllData);
+            
+            // 手动刷新按钮
+            elements.refreshData.addEventListener('click', refreshData);
+            
+            // GitHub设置按钮
+            elements.setupGithub.addEventListener('click', showGithubModal);
+            
+            // 保存GitHub Token
+            elements.saveGithubToken.addEventListener('click', saveGithubToken);
+            
+            // 取消GitHub设置
+            elements.cancelGithub.addEventListener('click', hideGithubModal);
         }
 
         // 初始化应用
@@ -1523,7 +1715,12 @@
             setupEventListeners();
             updateUI();
             startAutoRefresh();
-            startDataSync(); // 启动数据同步
+            
+            // 如果已设置GitHub Token，启动数据同步
+            if (dataStore.githubToken) {
+                updateGithubStatus(true);
+            }
+            
             generateQRCode();
             checkCheckinMode();
         }
