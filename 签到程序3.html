@@ -743,7 +743,7 @@
                 // 如果有已知的Gist ID，尝试获取它
                 if (this.gistId) {
                     try {
-                        const response = await fetch(`https://api.github.com/gists/${this.gistId}`, {
+                        const response = await fetch(`https://gist.github.com/hyj1226/${this.gistId}`, {
                             headers: {
                                 'Authorization': `token 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`,
                                 'Accept': 'application/vnd.github.v3+json'
@@ -796,7 +796,7 @@
 
                 // 如果有已知的Gist ID，更新它
                 if (this.gistId) {
-                    response = await fetch(`https://api.github.com/gists/${this.gistId}`, {
+                    response = await fetch(`https://gist.github.com/hyj1226/${this.gistId}`, {
                         method: 'PATCH',
                         headers: {
                             'Authorization': `token ${this.githubToken}`,
@@ -807,7 +807,7 @@
                     });
                 } else {
                     // 否则创建新的Gist
-                    response = await fetch('https://api.github.com/gists', {
+                    response = await fetch('https://gist.github.com/hyj1226', {
                         method: 'POST',
                         headers: {
                             'Authorization': `token ${this.githubToken}`,
@@ -997,7 +997,7 @@
 
             try {
                 console.log('正在检查云端更新...');
-                const response = await fetch(`https://api.github.com/gists/${dataStore.gistId}`, {
+                const response = await fetch(`https://gist.github.com/hyj1226/${dataStore.gistId}`, {
                     headers: {
                         'Authorization': `token ${dataStore.githubToken}`,
                         'Accept': 'application/vnd.github.v3+json'
@@ -1562,7 +1562,7 @@
 
             // 从云端重新加载数据
             if (dataStore.githubToken && dataStore.gistId) {
-                fetch(`https://api.github.com/gists/${dataStore.gistId}`, {
+                fetch(`https://gist.github.com/hyj1226/${dataStore.gistId}`, {
                     headers: {
                         'Authorization': `token ${dataStore.githubToken}`,
                         'Accept': 'application/vnd.github.v3+json'
